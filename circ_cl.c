@@ -1,4 +1,4 @@
-//
-// Created by chtka on 7/6/2019.
-//
-
+int main(int argc, char *argv[])
+{
+    return 0;
+}
