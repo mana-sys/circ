@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,7 +7,8 @@
 #include <unistd.h>
 
 #define BACKLOG 5
-#define MSG_SIZE 512
+#define CRLF "\r\n"
+#define MSG_SIZE 20
 #define NICK "NICK"
 #define USER "USER"
 
@@ -26,8 +28,8 @@ void exitErr(const char * msg) {
 
 int main(int argc, char *argv[]) {
 
-    int sfd;
-    ssize_t numRead;
+    int sfd, cfd;
+    ssize_t numRead = 0, totalRead = 0;
     struct sockaddr_un addr;
     char *p;
     char buf1[MSG_SIZE + 1], buf2[MSG_SIZE + 1];
@@ -37,6 +39,10 @@ int main(int argc, char *argv[]) {
 
     if ((sfd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
         exitErr("error creating socket");
+    }
+
+    if (remove(SV_SOCK_PATH) == -1 && errno != ENOENT) {
+        exitErr("error removing socket");
     }
 
     memset(&addr, 0, sizeof(struct sockaddr_un));
@@ -51,18 +57,61 @@ int main(int argc, char *argv[]) {
         exitErr("error listening on socket");
     }
 
+
     for (;;) {
-        if ((numRead = read(sfd, buf1, sizeof(buf1))) == -1) {
-            exitErr("error reading from socket");
+
+        if ((cfd = accept(sfd, NULL, 0)) == -1) {
+            exitErr("error accepting connection");
         }
 
-        p = strstr(buf1, "\r\n");
+        fprintf(stderr, "connection accepted\n");
 
-        if (p != NULL) {
-            printf("Full message read, parsing");
-        } else {
-            printf("Not full message read, will read more");
+        for (;;) {
+            if ((numRead = read(cfd, buf1 + totalRead, MSG_SIZE - totalRead)) == -1) {
+                exitErr("error reading from socket");
+            }
+
+            if (numRead == 0) {
+                fprintf(stderr, "Client disconnected. Shutting down.\n");
+                exit(EXIT_SUCCESS);
+            }
+
+            totalRead += numRead;
+
+            fprintf(stderr, "read.\n");
+
+            p = strstr(buf1, CRLF);
+
+            if (p != NULL) {
+                fprintf(stderr, "Full message read, parsing\n");
+                fprintf(stderr, "Message length: %ld\n", p + 2 - buf1);
+                for (char * i = buf1; i < p; i++) {
+                    fprintf(stderr, "%d ", *i);
+                }
+                fprintf(stderr, "\n");
+                memset(buf1, 0, sizeof(buf1));
+                totalRead = 0;
+//            p - buf1;
+//            memmove(buf1, p + 2, )
+            } else {
+                if (totalRead == MSG_SIZE) {
+                    if (write(cfd, "error parsing message", sizeof("error parsing message")) == -1) {
+                        exitErr("error writing error message");
+                    }
+                    totalRead = 0;
+                    memset(buf1, 0, sizeof(buf1));
+                } else {
+                    fprintf(stderr, "Not full message read, will read more. Total size: %ld\n", totalRead);
+                }
+//            if ((numRead = read(cfd, buf1 + numRead, sizeof(buf1) - numRead)) == -1) {
+//                exitErr("error reading from socket");
+//            }
+            }
+
+//        fflush(stdout);
         }
+
+
 
     }
 
