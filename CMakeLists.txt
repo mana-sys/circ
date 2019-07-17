@@ -8,3 +8,4 @@ add_subdirectory(test)
 
 enable_testing()
 add_test(NAME test_msgtok COMMAND test_msgtok)
+add_test(NAME test_parser COMMAND test_parser)
