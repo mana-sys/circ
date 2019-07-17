@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <assert.h>
-#include "hashtable.h"
+#include "../src/hashtable.h"
 
 int main()
 {
