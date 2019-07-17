@@ -12,7 +12,8 @@
 enum circ_msg_type {
     MSGUNKNOWN,
     MSGUSER,
-    MSGNICK
+    MSGNICK,
+    MSGPRIVMSG,
 };
 
 struct circ_msg_nick {
@@ -24,11 +25,17 @@ struct circ_msg_user {
     char *fullname;
 };
 
+struct circ_msg_privmsg {
+    char *msgtarget;
+    char *text;
+};
+
 struct circ_msg {
     enum circ_msg_type msgType;
     union {
         struct circ_msg_nick msgNick;
         struct circ_msg_user msgUser;
+        struct circ_msg_privmsg msgPrivmsg;
     };
 };
 

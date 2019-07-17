@@ -6,6 +6,7 @@ typedef int circ_parse_msg_fn(struct circ_msg *);
 
 static int parse_msg_nick(struct circ_msg *msg);
 static int parse_msg_user(struct circ_msg *msg);
+static int parse_msg_privmsg(struct circ_msg *msg);
 
 static circ_parse_msg_fn *parse_msg_fns[2] = {
     parse_msg_user,
@@ -18,7 +19,6 @@ int parse_msg_nick(struct circ_msg *msg)
     char *tok = msgtok(NULL, &toklen);
 
     msg->msgType = MSGNICK;
-    fprintf(stderr, "%s\n", tok);
 
     // If no nickname parameter given, then reply with
     // ERR_NONICKNAMEGIVEN
@@ -28,9 +28,6 @@ int parse_msg_nick(struct circ_msg *msg)
         return ERR_ERRONEUSNICKNAME;
     }
 
-    // Copy nickname parameter into nickname buffer
-//    strncpy(nickname, tok, toklen);
-//    nickname[toklen + 1] = '\0';
     msg->msgNick.nick = tok;
 
     return 0;
@@ -83,6 +80,22 @@ static int parse_user_cmd(struct circ_msg *msg)
         return err;
 
 }
+
+static int parse_msg_privmsg(struct circ_msg *msg)
+{
+    size_t toklen;
+    char *tok = msgtok(NULL, &toklen);
+    int err;
+
+    msg->msgType = MSGPRIVMSG;
+
+
+
+
+
+    return 0;
+}
+
 
 int parse_msg(char *buf, struct circ_msg *msg)
 {
