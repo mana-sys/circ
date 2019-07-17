@@ -1,8 +1,9 @@
-//
-// Created by manaxlalanes on 7/17/19.
-//
+#ifndef READ_MESSAGE_H
+#define READ_MESSAGE_H
 
-#ifndef CIRC_READ_MESSAGE_H
-#define CIRC_READ_MESSAGE_H
+#include <stdlib.h>
 
-#endif //CIRC_READ_MESSAGE_H
+typedef ssize_t (*read_func_type)(int fd, void *buf, size_t count);
+ssize_t read_message(int fd, char *msg, char *buf, ssize_t *storeTotalRead, read_func_type read);
+
+#endif
