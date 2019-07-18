@@ -13,6 +13,10 @@ char *msgtok(char * str, size_t *toklen)
             return NULL;
         }
         str = msgtok_ptr;
+    } else {
+        while (*str == ' ') {
+            str++;
+        }
     }
 
     end = strstr(str, CRLF);
@@ -42,7 +46,7 @@ char *msgtok(char * str, size_t *toklen)
                 *i = '\0';
                 *toklen = i - str;
                 msgtok_ptr = i + 1;
-//                while (*msgtok_ptr == ' ') msgtok_ptr++;
+                while (*msgtok_ptr == ' ') msgtok_ptr++;
                 return str;
             }
         }
@@ -68,6 +72,10 @@ char *msgtok_r(char *str, size_t *toklen, char **saveptr)
             return NULL;
         }
         str = *saveptr;
+    } else {
+        while (*str == ' ') {
+            str++;
+        }
     }
 
     end = strstr(str, CRLF);
@@ -85,6 +93,7 @@ char *msgtok_r(char *str, size_t *toklen, char **saveptr)
         *end = '\0';
         *saveptr = NULL;
         return str + 1;
+
     } else {
 
         // Search for spaces in the string until we reach a null character or CRLF.
