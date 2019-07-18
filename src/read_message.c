@@ -1,40 +1,75 @@
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "read_message.h"
 
-ssize_t read_message(int fd, char *msg, char *buf, ssize_t *storeTotalRead, read_func_type read_func)
+char *strncrlf(char *str, size_t limit)
 {
-    ssize_t numRead, numExtraBytes, msgLen;
-    char *msg_end;
+    for (size_t i = 1; i < limit; i++) {
+        if (str[i] == '\n' && str[i - 1] == '\r') {
+            return str + i - 1;
+        }
+    }
+
+    return NULL;
+}
+
+static int read_to_CRLF(int fd, char *buf, ssize_t *totalRead, bool *gotCRLF, ssize_t *msgLen)
+{
+    ssize_t numRead;
+    char * crlfIdx;
+    while ((crlfIdx = strncrlf(buf, *totalRead)) == NULL) {
+        numRead = read(fd, buf + *totalRead, 512 - *totalRead);
+        if (numRead == 0 || numRead == -1) {
+            return numRead;
+        }
+        *totalRead += numRead;
+        if (*totalRead >= 512) {
+            return 1;
+        }
+    }
+    *gotCRLF = true;
+    *msgLen = crlfIdx + 2 - buf;
+    return 1;
+}
+
+ssize_t read_message(int fd, char *msg, char *buf, ssize_t *storeTotalRead, bool *storeDiscardNext)
+{
+    ssize_t msgLen;
+    bool gotCRLF = false;
+    int res;
 
     for (;;) {
-
-        numRead = read_func(fd, buf + *storeTotalRead, 512 - *storeTotalRead);
-        if (numRead == -1 || numRead == 0)
-            return numRead;
-
-        *storeTotalRead += numRead;
-
-        if ((msg_end = strstr(buf, "\r\n")) == NULL) {
-            if (*storeTotalRead == 512) {
-                fprintf(stderr, "Invalid message in full buffer. Discarding buffer contents.\n");
-                memset(buf, 0, 512);
-                *storeTotalRead = 0;
+        res = read_to_CRLF(fd, buf, storeTotalRead, &gotCRLF, &msgLen);
+        if (res == 0 || res == -1) return res;
+        if (gotCRLF) {
+            if (*storeDiscardNext) {
+                *storeDiscardNext = false;
+                memmove(buf, buf + msgLen, *storeTotalRead - msgLen);
+                memset(buf + (*storeTotalRead - msgLen), 0, 512 - (*storeTotalRead - msgLen));
+                continue;
             } else {
-                fprintf(stderr, "Waiting for more input... (totalRead = %ld)\n", *storeTotalRead);
+                memcpy(msg, buf, msgLen);
+                memmove(buf, buf + msgLen, *storeTotalRead - msgLen);
+                memset(buf + (*storeTotalRead - msgLen), 0, 512 - (*storeTotalRead - msgLen));
+                *storeTotalRead -= msgLen;
+                return msgLen;
             }
-            continue;
+        } else {
+            *storeTotalRead = 0;
+
+            if (*storeDiscardNext) {
+                memset(buf, 0, 512);
+
+            } else {
+                *storeDiscardNext = true;
+                memcpy(msg, buf, 512);
+                msg[512 - 2] = '\r';
+                msg[512 - 1] = '\n';
+                return 512;
+            }
+
         }
-
-        msgLen = msg_end + 2 - buf;
-        numExtraBytes = *storeTotalRead - msgLen;
-
-        memcpy(msg, buf, msgLen);
-        memmove(buf, msg_end + 2, numExtraBytes);
-        memset(buf + numExtraBytes, 0, 512 - numExtraBytes);
-
-        return msgLen;
-
     }
 }
