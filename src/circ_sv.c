@@ -13,6 +13,7 @@
 #include "circ.h"
 #include "hashtable.h"
 #include "msgtok.h"
+#include "read_message.h"
 
 #define BACKLOG 5
 #define MSG_SIZE 512
@@ -59,14 +60,14 @@ static void sigHandler(int sig)
 
 static void *handle_conn(void *arg)
 {
-    ssize_t numRead, totalRead = 0, numExtraBytes;
-    size_t toklen;
+    ssize_t storeTotalRead = 0;
+    bool storeDiscardNext = false;
     struct circ_msg msg;
     struct conn_info ci;
     struct conn_params params;
-    char buf[MSG_SIZE];
+    char storeBuf[MSG_SIZE], buf[MSG_SIZE];
     char *msg_end, *tok;
-    int result;
+    int readRes, parseRes;
 
     params.cfd = ((struct conn_params *) arg)->cfd;
     memcpy(&params.addr, &((struct conn_params *) arg)->addr, sizeof(struct sockaddr_in));
@@ -77,42 +78,22 @@ static void *handle_conn(void *arg)
     memset(buf, 0, MSG_SIZE);
 
     for (;;) {
-        numRead = read(params.cfd, buf + totalRead, MSG_SIZE - totalRead);
-        if (numRead == -1) {
-            perror("read()");
+        readRes = read_message(params.cfd, buf, storeBuf, &storeTotalRead, &storeDiscardNext);
+        if (readRes == -1) {
+            perror("read_message()");
             pthread_exit((void *) 1);
-        }
-
-        if (numRead == 0) {
-            return 0;
-        }
-
-        totalRead += numRead;
-
-        // Check if the buffer currently has CRLF (a full message).
-        // If it does, parse the message. If not, we check if the buffer
-        // is full. If the buffer is not full, we request more input. If the
-        // buffer is full, we have received an incorrect message, and will
-        // discard the contents of the buffer.
-        if ((msg_end = strstr(buf, CRLF)) == NULL) {
-            if (totalRead == MSG_SIZE) {
-                fprintf(stderr, "Invalid message in full buffer. Discarding buffer contents.\n");
-                memset(buf, 0, MSG_SIZE);
-                totalRead = 0;
-            } else {
-                fprintf(stderr, "Waiting for more input... (totalRead = %ld)\n", totalRead);
-                continue;
+        } else if (readRes == 0) {
+            fprintf(stderr, "Reached EOF. Closing socket.\n");
+            if (close(params.cfd) == -1) {
+                perror("close()");
+                pthread_exit((void *) 1);
             }
+            pthread_exit((void *) 0);
         }
 
-        numExtraBytes = totalRead - ((msg_end + 2) - buf);
-
-        // Parse message. After parsing message, move the bytes after CRLF to the front of the buffer,
-        // and zero out the rest of the buffer.
-
-        // parse message here
-        result = parse_msg(buf, &msg);
-        if (result == 0) {
+        // Parse message.
+        parseRes = parse_msg(buf, &msg);
+        if (parseRes == 0) {
             switch (msg.msgType) {
                 case MSGUSER:
                     fprintf(stderr, "Got USER statement (username: %s, fullname: %s)\n",
@@ -128,26 +109,6 @@ static void *handle_conn(void *arg)
         } else {
             fprintf(stderr, "Invalid message format.\n");
         }
-
-//        printf("parsing message\n");
-//        tok = msgtok(buf, &toklen);
-//        if (tok != NULL && toklen != 0) {
-//            if (strncasecmp(tok, NICK, toklen) == 0) {
-//                fprintf(stderr, "Got NICK statement\n");
-//            } else if (strncasecmp(tok, USER, toklen) == 0) {
-//                fprintf(stderr, "Got USER statement\n");
-//            }
-//        } else {
-//            fprintf(stderr, "failed to parse\n");
-//        }
-
-
-         // Move contents of next message to the front of the buffer, and zero out the rest.
-        memmove(buf, msg_end + 2, numExtraBytes);
-        memset(buf + numExtraBytes, 0, MSG_SIZE - numExtraBytes);
-
-        // Currently, have numExtraBytes in the buffer.
-        totalRead = numExtraBytes;
     }
 }
 
@@ -179,58 +140,6 @@ void exitErr(const char * msg) {
     perror(msg);
     exit(EXIT_FAILURE);
 }
-
-//int parse_user_cmd(char *username, char *fullname)
-//{
-//    size_t toklen;
-//    char *tok = msgtok(NULL, &toklen);
-//
-//
-//
-//    if (tok == NULL || toklen == 0) {
-//        return ERR_NEEDMOREPARAMS;
-//    }
-//
-//    strncpy(username, tok, toklen);
-//    username[toklen + 1] = '\0';
-//
-//    if (msgtok(NULL, &toklen) == NULL) {
-//        return ERR_NEEDMOREPARAMS;
-//    }
-//
-//    if (msgtok(NULL, &toklen) == NULL) {
-//        return ERR_NEEDMOREPARAMS;
-//    }
-//
-//    if ((tok = msgtok(NULL, &toklen)) == NULL) {
-//        return ERR_NEEDMOREPARAMS;
-//    }
-//
-//    strncpy(fullname, tok, toklen);
-//    fullname[toklen + 1] = '\0';
-//
-//    return 0;
-//}
-
-//int parse_nick_cmd(char *nickname)
-//{
-//    size_t toklen;
-//    char *tok = msgtok(NULL, &toklen);
-//
-//    // If no nickname parameter given, then reply with
-//    // ERR_NONICKNAMEGIVEN
-//    if (tok == NULL || toklen == 0) {
-//        return ERR_NONICKNAMEGIVEN;
-//    } else if (toklen > NICKNAME_SIZE) {
-//        return ERR_ERRONEUSNICKNAME;
-//    }
-//
-//    // Copy nickname parameter into nickname buffer
-//    strncpy(nickname, tok, toklen);
-//    nickname[toklen + 1] = '\0';
-//
-//    return 0;
-//}
 
 // strategy
 // - try to read up to 512 bytes from buffer
@@ -290,99 +199,5 @@ int main(int argc, char *argv[]) {
             continue;
         }
         pthread_detach(t);
-
-//        for (;;) {
-//
-//
-//            if ((numRead = read(cfd, buf1 + totalRead, MSG_SIZE - totalRead)) == -1) {
-//                exitErr("error reading from socket");
-//            }
-//
-//            if (numRead == 0) {
-//                fprintf(stderr, "Client disconnected. Shutting down.\n");
-//                exit(EXIT_SUCCESS);
-//            }
-//
-//            totalRead += numRead;
-//
-//            fprintf(stderr, "read.\n");
-//
-//            p = strstr(buf1, CRLF);
-//
-//            // registration steps:
-//            // if NICK received first
-//
-//            if (p != NULL) {
-//
-//                fprintf(stderr, "Full message read, parsing\n");
-//
-//                tok = msgtok(buf1, &toklen);
-//                if (tok != NULL && toklen != 0) {
-//                    if (strncasecmp(tok, "NICK", toklen) == 0) {
-//                        fprintf(stderr, "Got NICK statement\n");
-//
-//                        parse_result = parse_nick_cmd(nick);
-//                        if (parse_result == ERR_NONICKNAMEGIVEN) {
-//                            sprintf(reply, "%d %s %s\r\n", ERR_NONICKNAMEGIVEN, strlen(nick) ? nick : "*", ":No nickname given");
-//                            printf("%s", reply);
-//                            if (write(cfd, reply, strlen(reply)) != strlen(reply)) {
-//                                fprintf(stderr, "error sending reply\n");
-//                            }
-//                        } else {
-//                            nickReceived = true;
-//                        }
-//
-//                    } else if (strncasecmp(tok, "USER", toklen) == 0) {
-//
-//                        fprintf(stderr, "Got USER statement\n");
-//
-//                        if (nickReceived) {
-//                            if (!registered) {
-//                                if (parse_user_cmd(username, fullname) == 0) {
-//                                    fprintf(stderr, "Parsed USER command successfully\n");
-//                                    fprintf(stderr, "Username: %s, Full name: %s\n", username, fullname);
-//                                    registered = true;
-//                                    sprintf(reply, "001 %s :Welcome to the Internet Relay Network %s!\r\n", nick, nick);
-//                                    if (write(cfd, reply, strlen(reply)) != strlen(reply)) {
-//                                        fprintf(stderr, "error sending reply\n");
-//                                    }
-//                                } else {
-//                                    sprintf(reply, "%d %s %s %s\r\n", ERR_NEEDMOREPARAMS, "*", "USER", ":Not enough parameters");
-//                                    if (write(cfd, reply, strlen(reply)) != strlen(reply)) {
-//                                        fprintf(stderr, "error sending reply\n");
-//                                    }
-//                                    printf("%s", reply);
-//                                }
-//                            } else {
-//                                sprintf(reply, "%d %s %s %s\r\n", ERR_ALREADYREGISTRED, nick, "USER", ":Unauthorized command (already registered)");
-//                                if (write(cfd, reply, strlen(reply)) != strlen(reply)) {
-//                                    fprintf(stderr, "error sending reply\n");
-//                                }
-//                                printf("%s", reply);
-////                                fprintf(stderr, "already registered");
-//                            }
-//                        } else {
-//                            fprintf(stderr, "nick must be sent first");
-//                        }
-//                    } else {
-//                        fprintf(stderr, "Unknown statement type\n");
-//                    }
-//                } else {
-//                    fprintf(stderr, "error parsing message\n");
-//                }
-//                memset(buf1, 0, sizeof(buf1));
-//                totalRead = 0;
-//            } else {
-//                if (totalRead == MSG_SIZE) {
-//                    if (write(cfd, "error parsing message", sizeof("error parsing message")) == -1) {
-//                        exitErr("error writing error message");
-//                    }
-//                    totalRead = 0;
-//                    memset(buf1, 0, sizeof(buf1));
-//                } else {
-//                    fprintf(stderr, "Not full message read, will read more. Total size: %ld\n", totalRead);
-//                }
-//            }
-//        }
     }
 }
