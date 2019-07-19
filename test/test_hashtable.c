@@ -128,7 +128,7 @@ void test_hashtable_insert_collision()
     // djb2("key1") % 7 = 2; expected index = 2
     result1 = hashtable_insert(table, "key1", (void *) 2); /* "key1" hashes to index 2 */
 
-    // djb2("key8") % 7 = 2, djb2a("key8") % 7 = 1; expected index = 4
+    // djb2("key8") % 7 = 2, djb2a("key8") % 7 = 1; expected index = 2 + (1 + 1) = 4
     result2 = hashtable_insert(table, "key8", (void *) 8);
 
     TEST_ASSERT_EQUAL_INT(0, result1);
