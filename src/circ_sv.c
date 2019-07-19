@@ -12,6 +12,7 @@
 
 #include "circ.h"
 #include "hashtable.h"
+#include "log.h"
 #include "msgtok.h"
 #include "read_message.h"
 
@@ -112,30 +113,6 @@ static void *handle_conn(void *arg)
     }
 }
 
-static char * strtok_no_replace_ptr;
-
-char * strtok_no_replace(char * str, char delimiter, size_t *len)
-{
-    if (str == NULL) {
-        if (strtok_no_replace_ptr == NULL) {
-            return NULL;
-        }
-        str = strtok_no_replace_ptr;
-    }
-    char *i;
-    for (i = str; *i != '\0'; i++) {
-        if (*i == delimiter) {
-            *len = i - str;
-            strtok_no_replace_ptr = i + 1;
-            return str;
-        }
-    }
-    strtok_no_replace_ptr = NULL;
-    return str;
-}
-
-
-
 void exitErr(const char * msg) {
     perror(msg);
     exit(EXIT_FAILURE);
@@ -149,6 +126,10 @@ void exitErr(const char * msg) {
 // - take the rest of the bytes and copy them to the front of the buffer
 
 int main(int argc, char *argv[]) {
+
+
+
+//    circlog(L_DEBUG, "Starting server...\n");
 
     int s;
     socklen_t len;

@@ -8,20 +8,23 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+typedef void (*destructor_t)(void *);
+
 struct hashtable_item {
     char *key;
-    char *value;
+    void *value;
     bool deleted;
 };
 
 struct hashtable_table {
     size_t size, cap;
     struct hashtable_item **items;
+    destructor_t destructor;
 };
 
-struct hashtable_table *hashtable_new_table(int size_hint);
-int hashtable_insert(struct hashtable_table *table, char *key, char *value);
-char *hashtable_search(struct hashtable_table *table, char *key);
+struct hashtable_table *hashtable_new_table(size_t cap_hint, destructor_t destructor);
+int hashtable_insert(struct hashtable_table *table, char *key, void *value);
+void *hashtable_search(struct hashtable_table *table, char *key);
 int hashtable_remove(struct hashtable_table *table, char *key);
 int hashtable_delete_table(struct hashtable_table *table);
 

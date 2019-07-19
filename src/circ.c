@@ -111,7 +111,7 @@ int parse_msg(char *buf, struct circ_msg *msg)
             return 0;
         }
     } else {
-        fprintf(stderr, "failed to parse\n");
+        fprintf(stderr, "to parse\n");
     }
 
 

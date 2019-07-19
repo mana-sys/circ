@@ -106,7 +106,7 @@ char *msgtok_r(char *str, size_t *toklen, char **saveptr)
                 *i = '\0';
                 *toklen = i - str;
                 *saveptr = i + 1;
-//                while (*msgtok_ptr == ' ') msgtok_ptr++;
+                while (**saveptr == ' ') *saveptr += 1;
                 return str;
             }
         }
