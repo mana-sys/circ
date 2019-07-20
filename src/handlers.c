@@ -1,17 +1,25 @@
+#include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "codes.h"
 #include "handlers.h"
 #include "log.h"
 #include "irc.h"
+#include "replies.h"
 
 static int handle_nick_message(struct context_client *client, struct irc_message *message, char *buf)
 {
+    size_t numWritten;
+
     circlog(L_DEBUG, "Handling nick message...");
 
     // Check for errors encountered while parsing the NICK message.
     if (message->parse_err == ERR_NONICKNAMEGIVEN) {
         circlog(L_DEBUG, "Sending ERR_NONICKNAMEGIVEN.");
+        numWritten = replyf_err_nonicknamegiven(client, NULL, buf);
+        write(client->fd, buf, numWritten);
+        return 1;
     }
 
     strcpy(client->nickname, message->message.nick.nick);
