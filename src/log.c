@@ -1,10 +1,31 @@
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 
 #include "log.h"
 
 static loglevel_t threshold = L_DEBUG;
+
+loglevel_t parse_loglevel(char * levelstr)
+{
+    size_t levelstrlen;
+
+    levelstrlen = strlen(levelstr);
+    if (strncasecmp("TRACE", levelstr, levelstrlen) == 0)
+        return L_TRACE;
+    if (strncasecmp("DEBUG", levelstr, levelstrlen) == 0)
+        return L_DEBUG;
+    if (strncasecmp("INFO", levelstr, levelstrlen) == 0)
+        return L_INFO;
+    if (strncasecmp("WARNING", levelstr, levelstrlen) == 0)
+        return L_WARNING;
+    if (strncasecmp("ERROR", levelstr, levelstrlen) == 0)
+        return L_ERROR;
+    if (strncasecmp("CRITICAL", levelstr, levelstrlen) == 0)
+        return L_CRITICAL;
+    return -1;
+}
 
 void set_loglevel(loglevel_t level)
 {

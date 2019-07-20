@@ -40,10 +40,4 @@ struct irc_message {
     } message;
 };
 
-struct irc_reply {
-
-};
-
-
-
 #endif

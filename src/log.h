@@ -14,6 +14,7 @@
 
 typedef int loglevel_t;
 
+loglevel_t parse_loglevel(char * levelstr);
 void set_loglevel(loglevel_t level);
 void circlog(loglevel_t level, char *fmt, ...);
 

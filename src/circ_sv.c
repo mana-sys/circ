@@ -124,7 +124,51 @@ void exitErr(const char * msg) {
 // - found here, then that's an error. Otherwise, we parse the message, up to the \r\n. After parsing the message,
 // - take the rest of the bytes and copy them to the front of the buffer
 
+static void printUsage()
+{
+    fprintf(stderr, "Usage: circ_sv -h hostname -p port -l level\n");
+}
+
 int main(int argc, char *argv[]) {
+
+    int opt;
+    char *hostname = NULL, *port = NULL, *loglevelstr = NULL;
+    loglevel_t loglevel;
+
+    while ((opt = getopt(argc, argv, ":h:p:l:")) != -1) {
+        switch(opt) {
+            case 'h':
+                hostname = optarg;
+                break;
+            case 'p':
+                port = optarg;
+                break;
+            case 'l':
+                loglevelstr = optarg;
+                break;
+            case ':':
+                fprintf(stderr, "Missing argument for option -%c.\n", optopt);
+                printUsage();
+                exit(EXIT_FAILURE);
+            case '?':
+                fprintf(stderr, "Unrecognized option -%c.\n", optopt);
+                printUsage();
+                exit(EXIT_FAILURE);
+            default:
+                fprintf(stderr, "Unexpected case in switch().\n");
+                exit(EXIT_FAILURE);
+        }
+    }
+
+    fprintf(stderr, "hostname is %s\n", hostname);
+    fprintf(stderr, "port is %s\n", port);
+    fprintf(stderr, "loglevel is %s\n", loglevelstr);
+
+    if (parse_loglevel(loglevelstr) == -1) {
+        fprintf(stderr, "Invalid argument for option -l specified.\n");
+        printUsage();
+        exit(EXIT_FAILURE);
+    }
 
     set_loglevel(L_TRACE);
 
