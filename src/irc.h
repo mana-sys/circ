@@ -31,6 +31,8 @@ struct irc_message_privmsg {
 
 struct irc_message {
     enum irc_message_type type;
+    char *command;
+    int parse_err;
     union {
         struct irc_message_nick nick;
         struct irc_message_user user;
@@ -44,4 +46,4 @@ struct irc_reply {
 
 
 
-#endif IRC_H
+#endif

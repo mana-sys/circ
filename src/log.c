@@ -46,7 +46,7 @@ static void circlog_internal(loglevel_t level, char *fmt, va_list argptr)
     }
 
     flockfile(stdout);
-    printf("[%s] %6s - ", levelstr, buf);
+    printf("[%.6s] %s - ", levelstr, buf);
     vprintf(fmt, argptr);
     printf("\n");
     fflush(stdout);

@@ -2,7 +2,12 @@
 // Created by manaxlalanes on 7/19/19.
 //
 
-#ifndef CIRC_HANDLERS_H
-#define CIRC_HANDLERS_H
+#ifndef HANDLERS_H
+#define HANDLERS_H
 
-#endif //CIRC_HANDLERS_H
+#include "context.h"
+#include "irc.h"
+
+int handle_message(struct context_client *client, struct context_server *server, struct irc_message *message, char *buf);
+
+#endif

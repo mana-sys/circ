@@ -1,5 +1,6 @@
 #include <arpa/inet.h>
 #include <errno.h>
+#include <netdb.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -11,9 +12,13 @@
 #include <unistd.h>
 
 #include "circ.h"
+#include "context.h"
+#include "handlers.h"
 #include "hashtable.h"
+#include "irc.h"
 #include "log.h"
 #include "msgtok.h"
+#include "parser.h"
 #include "read_message.h"
 
 #define BACKLOG 5
@@ -35,13 +40,16 @@ int write_err_erroneusnickname(int fd, char *err_nick) {
     return 0;
 }
 
+struct hashtable_table *g_nicknames;
+
 struct conn_params {
     int cfd;
     struct sockaddr_in addr;
+    socklen_t len;
 };
 
 struct conn_info {
-    bool registered;
+    bool registered, gotNickname, gotUsername;
     char nickname[NICKNAME_SIZE + 1];
     char username[512];
     char fullname[512];
@@ -50,7 +58,7 @@ struct conn_info {
 static void sigHandler(int sig)
 {
     if (sig == SIGINT) {
-        printf("Caught SIGINT - shutting down server.\n");
+        circlog(L_INFO, "SIGINT received; shutting down server.");
         if (close(sfd) == -1) {
             perror("close()");
             exit(EXIT_FAILURE);
@@ -63,20 +71,26 @@ static void *handle_conn(void *arg)
 {
     ssize_t storeTotalRead = 0;
     bool storeDiscardNext = false;
-    struct circ_msg msg;
-    struct conn_info ci;
+    struct irc_message message;
     struct conn_params params;
-    char storeBuf[MSG_SIZE], buf[MSG_SIZE];
-    char *msg_end, *tok;
-    int readRes, parseRes;
+    struct context_client client;
+    char storeBuf[MSG_SIZE], buf[MSG_SIZE], outBuf[MSG_SIZE];
+    char hostname[100];
+    int readRes;
 
     params.cfd = ((struct conn_params *) arg)->cfd;
+    params.len = ((struct conn_params *) arg)->len;
     memcpy(&params.addr, &((struct conn_params *) arg)->addr, sizeof(struct sockaddr_in));
 
     free(arg);
 
-    memset(&ci, 0, sizeof(struct conn_info));
+    getnameinfo((struct sockaddr *) &params.addr, params.len, hostname, 100, NULL, 0, 0);
+    circlog(L_INFO, "Established connection with %s.", hostname);
+
+    memset(&client, 0, sizeof(struct context_client));
     memset(buf, 0, MSG_SIZE);
+
+    client.fd = params.cfd;
 
     for (;;) {
         readRes = read_message(params.cfd, buf, storeBuf, &storeTotalRead, &storeDiscardNext);
@@ -84,7 +98,7 @@ static void *handle_conn(void *arg)
             perror("read_message()");
             pthread_exit((void *) 1);
         } else if (readRes == 0) {
-            fprintf(stderr, "Reached EOF. Closing socket.\n");
+            circlog(L_INFO, "Client closed connection. Closing socket.");
             if (close(params.cfd) == -1) {
                 perror("close()");
                 pthread_exit((void *) 1);
@@ -92,24 +106,8 @@ static void *handle_conn(void *arg)
             pthread_exit((void *) 0);
         }
 
-        // Parse message.
-        parseRes = parse_msg(buf, &msg);
-        if (parseRes == 0) {
-            switch (msg.msgType) {
-                case MSGUSER:
-                    fprintf(stderr, "Got USER statement (username: %s, fullname: %s)\n",
-                            msg.msgUser.username, msg.msgUser.fullname);
-                    break;
-                case MSGNICK:
-                    fprintf(stderr, "Got NICK statement\n");
-                    fprintf(stderr, "Nickname is %s\n", msg.msgNick.nick);
-                    break;
-                default:
-                    fprintf(stderr, "Unknown/unsupported message type\n");
-            }
-        } else {
-            fprintf(stderr, "Invalid message format.\n");
-        }
+        parse_message(buf, &message);
+        handle_message(&client, NULL, &message, outBuf);
     }
 }
 
@@ -127,19 +125,22 @@ void exitErr(const char * msg) {
 
 int main(int argc, char *argv[]) {
 
+    set_loglevel(L_TRACE);
 
-
-//    circlog(L_DEBUG, "Starting server...\n");
+    circlog(L_TRACE, "Starting server...");
 
     int s;
     socklen_t len;
     pthread_t t;
     struct sockaddr_in svaddr;
     struct conn_params *params;
+    char errbuf[50];
 
 
     if ((sfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-        exitErr("error creating socket");
+        strerror_r(errno, errbuf, 50);
+        circlog(L_CRITICAL, "socket(): %s\n", errbuf);
+        exit(EXIT_FAILURE);
     }
 
     memset(&svaddr, 0, sizeof(struct sockaddr_in));
@@ -150,7 +151,9 @@ int main(int argc, char *argv[]) {
     }
 
     if (bind(sfd, (struct sockaddr *) &svaddr, sizeof(struct sockaddr_in)) == -1) {
-        exitErr("error binding socket");
+        strerror_r(errno, errbuf, 50);
+        circlog(L_CRITICAL, "error on socket(): %s", errbuf);
+        exit(EXIT_FAILURE);
     }
 
     if (listen(sfd, BACKLOG) == -1) {
@@ -164,21 +167,20 @@ int main(int argc, char *argv[]) {
 
 
     for (;;) {
-        len = sizeof(struct sockaddr_in);
         params = malloc(sizeof(struct conn_params));
-        if ((params->cfd = accept(sfd, (struct sockaddr *) &params->addr, &len)) == -1) {
+        params->len = sizeof(struct sockaddr_in);
+        if ((params->cfd = accept(sfd, (struct sockaddr *) &params->addr, &params->len)) == -1) {
             exitErr("error accepting connection");
         }
 
-        fprintf(stderr, "connection accepted\n");
 
         s = pthread_create(&t, NULL, handle_conn, params);
-
-        fprintf(stderr, "created thread\n");
         if (s != 0) {
-            perror("pthread_create()");
+            circlog(L_ERROR, "Failed to create new thread for incoming connection.");
             continue;
         }
+        circlog(L_INFO, "Created new thread for connection.");
+
         pthread_detach(t);
     }
 }
