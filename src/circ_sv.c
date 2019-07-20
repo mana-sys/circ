@@ -106,6 +106,7 @@ static void *handle_conn(void *arg)
             pthread_exit((void *) 0);
         }
 
+        memset(&message, 0, sizeof(struct irc_message));
         parse_message(buf, &message);
         handle_message(&client, NULL, &message, outBuf);
     }
@@ -145,7 +146,7 @@ int main(int argc, char *argv[]) {
 
     memset(&svaddr, 0, sizeof(struct sockaddr_in));
     svaddr.sin_family = AF_INET;
-    svaddr.sin_port = PORT_NUM;
+    svaddr.sin_port = htons(PORT_NUM);
     if (inet_pton(AF_INET, "0.0.0.0", &svaddr.sin_addr) == -1) {
         fprintf(stderr, "Error converting\n");
     }
