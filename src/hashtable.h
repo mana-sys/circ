@@ -17,7 +17,7 @@ struct hashtable_item {
 };
 
 struct hashtable_table {
-    size_t size, cap;
+    size_t size, occupied, cap;
     struct hashtable_item **items;
     destructor_t destructor;
 };

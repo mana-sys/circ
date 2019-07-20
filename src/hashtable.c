@@ -4,7 +4,7 @@
 
 #include "hashtable.h"
 
-#define HT_INIT_CAP 53
+#define HT_LOAD_FACTOR_UPPER_BOUND 0.75
 
 int is_prime(size_t x)
 {
@@ -83,9 +83,9 @@ struct hashtable_table *hashtable_new_table(size_t cap_hint, destructor_t destru
 {
     struct hashtable_table *ht = malloc(sizeof(struct hashtable_table));
 
-    ht->size = 0;
+    ht->size = ht->occupied = 0;
     ht->cap = next_prime(cap_hint);
-    ht->items = calloc(HT_INIT_CAP, sizeof(struct hashtable_item *));
+    ht->items = calloc(ht->cap, sizeof(struct hashtable_item *));
     ht->destructor = destructor;
 
     return ht;
@@ -93,10 +93,12 @@ struct hashtable_table *hashtable_new_table(size_t cap_hint, destructor_t destru
 
 int hashtable_insert(struct hashtable_table *table, char *key, void *value)
 {
+    size_t loc, initLoc;
+
     if (table->size == table->cap)
         return 1;
 
-    size_t loc = djb2((unsigned char *) key) % table->cap;
+    loc = initLoc = djb2((unsigned char *) key) % table->cap;
 
     while (table->items[loc] != NULL) {
 
@@ -108,15 +110,18 @@ int hashtable_insert(struct hashtable_table *table, char *key, void *value)
             }
         } else {
             delete_hashtable_item(table->items[loc], table->destructor);
+            table->occupied--;
             break;
         }
-
-
+        
         loc = (loc + djb2a((unsigned char *) key) + 1) % table->cap;
+        if (loc == initLoc)
+            return 1;
     }
 
     table->items[loc] = new_hashtable_item(key, value);
     table->size++;
+    table->occupied++;
 
     return 0;
 }
