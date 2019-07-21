@@ -210,7 +210,128 @@ void test_hashtable_search()
     hashtable_delete_table(table);
 }
 
+static void test_hashtable_insert_to_full()
+{
+    struct hashtable_table *table;
+    size_t result, i;
+    size_t seq[13] = {7, 4, 1, 2, 0, 8, 9, 5, 3, 11, 10, 12, 6};
+    void *value;
+    char key[5];
 
+    table = hashtable_new_table(13, noop_destructor);
+
+    for (i = 0; i < 13; i++) {
+        sprintf(key, "key%lu", seq[i]);
+        result = hashtable_insert(table, key, (void *) seq[i]);
+        TEST_ASSERT_EQUAL_INT(0, result);
+    }
+
+    for (i = 0; i < 13; i++) {
+        sprintf(key, "key%lu", i);
+        value = hashtable_search(table, key);
+        TEST_ASSERT_EQUAL_PTR((void *) i, value);
+    }
+
+    hashtable_delete_table(table);
+}
+
+static void test_hashtable_insert_to_full_and_remove()
+{
+    struct hashtable_table *table;
+    size_t result, i;
+    size_t seq[13] = {7, 4, 1, 2, 0, 8, 9, 5, 3, 11, 10, 12, 6};
+    void *value;
+    char key[5];
+
+    table = hashtable_new_table(13, noop_destructor);
+
+    for (i = 0; i < 13; i++) {
+        sprintf(key, "key%lu", seq[i]);
+        result = hashtable_insert(table, key, (void *) seq[i]);
+        TEST_ASSERT_EQUAL_INT(0, result);
+    }
+
+    for (i = 0; i < 13; i++) {
+        sprintf(key, "key%lu", i);
+        value = hashtable_search(table, key);
+        TEST_ASSERT_EQUAL_PTR((void *) i, value);
+    }
+
+    for (i = 0; i < 13; i++) {
+        sprintf(key, "key%lu", i);
+        result = hashtable_remove(table, key);
+        TEST_ASSERT_EQUAL_INT(0, result);
+    }
+
+    for (i = 0; i < 13; i++) {
+        sprintf(key, "key%lu", i);
+        value = hashtable_search(table, key);
+        TEST_ASSERT_EQUAL_PTR(NULL, value);
+    }
+
+    hashtable_delete_table(table);
+}
+
+static void test_hashtable_insert_to_full_and_remove_2x()
+{
+    struct hashtable_table *table;
+    size_t result, i;
+    size_t seq[13] = {7, 4, 1, 2, 0, 8, 9, 5, 3, 11, 10, 12, 6};
+    void *value;
+    char key[5];
+
+    table = hashtable_new_table(13, noop_destructor);
+
+    for (i = 0; i < 13; i++) {
+        sprintf(key, "key%lu", seq[i]);
+        result = hashtable_insert(table, key, (void *) seq[i]);
+        TEST_ASSERT_EQUAL_INT(0, result);
+    }
+
+    for (i = 0; i < 13; i++) {
+        sprintf(key, "key%lu", i);
+        value = hashtable_search(table, key);
+        TEST_ASSERT_EQUAL_PTR((void *) i, value);
+    }
+
+    for (i = 0; i < 13; i++) {
+        sprintf(key, "key%lu", i);
+        result = hashtable_remove(table, key);
+        TEST_ASSERT_EQUAL_INT(0, result);
+    }
+
+    for (i = 0; i < 13; i++) {
+        sprintf(key, "key%lu", i);
+        value = hashtable_search(table, key);
+        TEST_ASSERT_EQUAL_PTR(NULL, value);
+    }
+
+    for (i = 0; i < 13; i++) {
+        sprintf(key, "key%lu", seq[12 - i]);
+        result = hashtable_insert(table, key, (void *) seq[12 - i]);
+        TEST_ASSERT_EQUAL_INT(0, result);
+    }
+
+    for (i = 0; i < 13; i++) {
+        sprintf(key, "key%lu", i);
+        value = hashtable_search(table, key);
+        TEST_ASSERT_EQUAL_PTR((void *) i, value);
+    }
+
+    for (i = 0; i < 13; i++) {
+        sprintf(key, "key%lu", i);
+        result = hashtable_remove(table, key);
+        TEST_ASSERT_EQUAL_INT(0, result);
+    }
+
+    for (i = 0; i < 13; i++) {
+        sprintf(key, "key%lu", i);
+        value = hashtable_search(table, key);
+        TEST_ASSERT_EQUAL_PTR(NULL, value);
+    }
+
+    hashtable_delete_table(table);
+}
 
 /*
  * End black-box tests.
@@ -219,6 +340,10 @@ void test_hashtable_search()
 int main()
 {
     UnityBegin("test_hashtable.c");
+
+    /*
+     * Begin white-box tests.
+     */
     RUN_TEST(test_next_prime);
     RUN_TEST(test_hashtable_new_table);
     RUN_TEST(test_hashtable_insert);
@@ -227,5 +352,18 @@ int main()
     RUN_TEST(test_hashtable_search);
     RUN_TEST(test_hashtable_delete);
     RUN_TEST(test_hashtable_delete_and_reinsert_at_same_key);
+    /*
+     * End white-box tests.
+     */
+
+    /*
+     * Begin black-box tests.
+     */
+    RUN_TEST(test_hashtable_insert_to_full);
+    RUN_TEST(test_hashtable_insert_to_full_and_remove);
+    RUN_TEST(test_hashtable_insert_to_full_and_remove_2x);
+    /*
+     * End black-box tests.
+     */
     return UnityEnd();
 }
