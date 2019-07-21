@@ -23,9 +23,9 @@ struct hashtable_table {
 };
 
 struct hashtable_table *hashtable_new_table(size_t cap_hint, destructor_t destructor);
-int hashtable_insert(struct hashtable_table *table, char *key, void *value);
-void *hashtable_search(struct hashtable_table *table, char *key);
-int hashtable_remove(struct hashtable_table *table, char *key);
+int hashtable_insert(struct hashtable_table *table, const char *key, void *value);
+void *hashtable_search(struct hashtable_table *table, const char *key);
+int hashtable_remove(struct hashtable_table *table, const char *key);
 int hashtable_delete_table(struct hashtable_table *table);
 
 #endif //CIRC_HASHTABLE_H

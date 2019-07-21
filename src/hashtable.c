@@ -53,7 +53,7 @@ static unsigned long djb2a(unsigned char *str)
     return hash;
 }
 
-static struct hashtable_item *new_hashtable_item(char *key, char *value)
+static struct hashtable_item *new_hashtable_item(const char *key, char *value)
 {
     struct hashtable_item *item = malloc(sizeof(struct hashtable_item));
 
@@ -91,12 +91,14 @@ struct hashtable_table *hashtable_new_table(size_t cap_hint, destructor_t destru
     return ht;
 }
 
-int hashtable_insert(struct hashtable_table *table, char *key, void *value)
+int hashtable_insert(struct hashtable_table *table, const char *key, void *value)
 {
     size_t loc, initLoc;
 
-    if (table->size == table->cap)
+    if (table->size == table->cap) {
+        fprintf(stderr, "table->size == table->cap\n");
         return 1;
+    }
 
     loc = initLoc = djb2((unsigned char *) key) % table->cap;
 
@@ -115,8 +117,9 @@ int hashtable_insert(struct hashtable_table *table, char *key, void *value)
         }
         
         loc = (loc + djb2a((unsigned char *) key) + 1) % table->cap;
-        if (loc == initLoc)
+        if (loc == initLoc) {
             return 1;
+        }
     }
 
     table->items[loc] = new_hashtable_item(key, value);
@@ -126,12 +129,12 @@ int hashtable_insert(struct hashtable_table *table, char *key, void *value)
     return 0;
 }
 
-void *hashtable_search(struct hashtable_table *table, char *key)
+void *hashtable_search(struct hashtable_table *table, const char *key)
 {
-    size_t loc;
+    size_t loc, init;
     struct hashtable_item *item;
 
-    loc = djb2((unsigned char *) key) % table->cap;
+    loc = init = djb2((unsigned char *) key) % table->cap;
     item = table->items[loc];
 
     while (item != NULL) {
@@ -141,14 +144,17 @@ void *hashtable_search(struct hashtable_table *table, char *key)
             }
         }
 
-        loc = (loc + djb2a((unsigned char *) key) + 1) % table->cap;
+        /* If we have looped around and checked all spots of the hashtable, return NULL. */
+        if ((loc = (loc + djb2a((unsigned char *) key) + 1) % table->cap) == init)
+            return NULL;
+
         item = table->items[loc];
     }
 
     return NULL;
 }
 
-int hashtable_remove(struct hashtable_table *table, char *key)
+int hashtable_remove(struct hashtable_table *table, const char *key)
 {
     size_t loc;
     struct hashtable_item *item;
