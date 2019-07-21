@@ -27,20 +27,8 @@
 
 int sfd;
 
-int write_err_erroneusnickname(int fd, char *err_nick) {
-    char reply[MSG_SIZE];
-    size_t reply_size;
-
-    sprintf(reply, "%d %s %s\r\n", ERR_NONICKNAMEGIVEN, strlen(err_nick) ? err_nick : "*", ":No nickname given");
-    reply_size = strlen(reply);
-
-    if (write(fd, reply, reply_size) != reply_size) {
-        return 1;
-    }
-    return 0;
-}
-
 struct hashtable_table *g_nicknames;
+pthread_mutex_t g_nicknames_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct conn_params {
     int cfd;
@@ -63,6 +51,8 @@ static void sigHandler(int sig)
             perror("close()");
             exit(EXIT_FAILURE);
         }
+
+        hashtable_delete_table(g_nicknames);
         exit(EXIT_SUCCESS);
     }
 }
@@ -74,6 +64,7 @@ static void *handle_conn(void *arg)
     struct irc_message message;
     struct conn_params params;
     struct context_client client;
+    struct context_server server;
     char storeBuf[MSG_SIZE], buf[MSG_SIZE], outBuf[MSG_SIZE];
     char hostname[100];
     int readRes;
@@ -82,12 +73,14 @@ static void *handle_conn(void *arg)
     params.len = ((struct conn_params *) arg)->len;
     memcpy(&params.addr, &((struct conn_params *) arg)->addr, sizeof(struct sockaddr_in));
 
-    free(arg);
-
-    getnameinfo((struct sockaddr *) &params.addr, params.len, hostname, 100, NULL, 0, 0);
-    circlog(L_INFO, "Established connection with %s.", hostname);
-
     memset(&client, 0, sizeof(struct context_client));
+
+    server.nick_table = g_nicknames;
+    server.nick_table_mutex = g_nicknames_mutex;
+    free(arg);
+    getnameinfo((struct sockaddr *) &params.addr, params.len, client.hostname, 50, NULL, 0, 0);
+    circlog(L_INFO, "Established connection with %s.", client.hostname);
+
     memset(buf, 0, MSG_SIZE);
 
     client.fd = params.cfd;
@@ -108,7 +101,7 @@ static void *handle_conn(void *arg)
 
         memset(&message, 0, sizeof(struct irc_message));
         parse_message(buf, &message);
-        handle_message(&client, NULL, &message, outBuf);
+        handle_message(&client, &server, &message, outBuf);
     }
 }
 
@@ -129,46 +122,51 @@ static void printUsage()
     fprintf(stderr, "Usage: circ_sv -h hostname -p port -l level\n");
 }
 
+static void noop_destructor(void *ptr)
+{
+
+}
+
 int main(int argc, char *argv[]) {
-
-    int opt;
-    char *hostname = NULL, *port = NULL, *loglevelstr = NULL;
-    loglevel_t loglevel;
-
-    while ((opt = getopt(argc, argv, ":h:p:l:")) != -1) {
-        switch(opt) {
-            case 'h':
-                hostname = optarg;
-                break;
-            case 'p':
-                port = optarg;
-                break;
-            case 'l':
-                loglevelstr = optarg;
-                break;
-            case ':':
-                fprintf(stderr, "Missing argument for option -%c.\n", optopt);
-                printUsage();
-                exit(EXIT_FAILURE);
-            case '?':
-                fprintf(stderr, "Unrecognized option -%c.\n", optopt);
-                printUsage();
-                exit(EXIT_FAILURE);
-            default:
-                fprintf(stderr, "Unexpected case in switch().\n");
-                exit(EXIT_FAILURE);
-        }
-    }
-
-    fprintf(stderr, "hostname is %s\n", hostname);
-    fprintf(stderr, "port is %s\n", port);
-    fprintf(stderr, "loglevel is %s\n", loglevelstr);
-
-    if (parse_loglevel(loglevelstr) == -1) {
-        fprintf(stderr, "Invalid argument for option -l specified.\n");
-        printUsage();
-        exit(EXIT_FAILURE);
-    }
+//
+//    int opt;
+//    char *hostname = NULL, *port = NULL, *loglevelstr = NULL;
+//    loglevel_t loglevel;
+//
+//    while ((opt = getopt(argc, argv, ":h:p:l:")) != -1) {
+//        switch(opt) {
+//            case 'h':
+//                hostname = optarg;
+//                break;
+//            case 'p':
+//                port = optarg;
+//                break;
+//            case 'l':
+//                loglevelstr = optarg;
+//                break;
+//            case ':':
+//                fprintf(stderr, "Missing argument for option -%c.\n", optopt);
+//                printUsage();
+//                exit(EXIT_FAILURE);
+//            case '?':
+//                fprintf(stderr, "Unrecognized option -%c.\n", optopt);
+//                printUsage();
+//                exit(EXIT_FAILURE);
+//            default:
+//                fprintf(stderr, "Unexpected case in switch().\n");
+//                exit(EXIT_FAILURE);
+//        }
+//    }
+//
+//    fprintf(stderr, "hostname is %s\n", hostname);
+//    fprintf(stderr, "port is %s\n", port);
+//    fprintf(stderr, "loglevel is %s\n", loglevelstr);
+//
+//    if (parse_loglevel(loglevelstr) == -1) {
+//        fprintf(stderr, "Invalid argument for option -l specified.\n");
+//        printUsage();
+//        exit(EXIT_FAILURE);
+//    }
 
     set_loglevel(L_TRACE);
 
@@ -180,6 +178,8 @@ int main(int argc, char *argv[]) {
     struct sockaddr_in svaddr;
     struct conn_params *params;
     char errbuf[50];
+
+    g_nicknames = hashtable_new_table(50, noop_destructor);
 
 
     if ((sfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {

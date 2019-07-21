@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 
     memset(&addr, 0, sizeof(struct sockaddr_un));
     addr.sin_family = AF_INET;
-    addr.sin_port = 50002;
+    addr.sin_port = htons(50002);
 //    strncpy(addr.sun_path, SV_SOCK_PATH, sizeof(addr.sun_path) - 1);
     inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
 

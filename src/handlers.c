@@ -8,9 +8,11 @@
 #include "irc.h"
 #include "replies.h"
 
-static int handle_nick_message(struct context_client *client, struct irc_message *message, char *buf)
+static int handle_nick_message(struct context_client *client,
+        struct context_server *server, struct irc_message *message, char *buf)
 {
     size_t numWritten;
+    void *old;
 
     circlog(L_DEBUG, "Handling nick message...");
 
@@ -22,36 +24,68 @@ static int handle_nick_message(struct context_client *client, struct irc_message
         return 1;
     }
 
-    strcpy(client->nickname, message->message.nick.nick);
-    client->receivedNick = true;
+    // Check for ERR_NICKNAMEINUSE
+    pthread_mutex_lock(&server->nick_table_mutex);
+    if (hashtable_search(server->nick_table, message->message.nick.nick) != NULL) {
+        circlog(L_DEBUG, "Sending ERR_NICKNAMEINUSE.");
+        numWritten = replyf_err_nicknameinuse(client, NULL, buf, message->message.nick.nick);
+        write(client->fd, buf, numWritten);
+        return 1;
+    }
 
-    if (client->receivedUser) {
-        circlog(L_DEBUG, "Registration for %s@%s complete.", client->username, "TODO");
+    if (client->receivedNick) {
+        circlog(L_DEBUG, "Entry for old nickname found, removing that entry and adding the new one.");
+        old = hashtable_search(server->nick_table, client->nickname);
+        hashtable_remove(server->nick_table, client->nickname);
+        strcpy(client->nickname, message->message.nick.nick);
+
+        hashtable_insert(server->nick_table, client->nickname, old);
+    } else {
+        circlog(L_DEBUG, "Setting nickname and adding nickname to nick table.");
+        strcpy(client->nickname, message->message.nick.nick);
+        hashtable_insert(server->nick_table, client->nickname, (void *) 1);
+        client->receivedNick = true;
+    }
+    pthread_mutex_unlock(&server->nick_table_mutex);
+
+    if (!client->registered && client->receivedUser) {
+        circlog(L_DEBUG, "Registration for %s@%s complete.", client->username, client->hostname);
+        numWritten = replyf_rpl_welcome(client, buf);
+        write(client->fd, buf, numWritten);
         client->registered = true;
     }
 
     return 0;
 }
 
-static int handle_user_message(struct context_client *client, struct irc_message *message, char *buf)
+static int handle_user_message(struct context_client *client,
+        struct context_server *server, struct irc_message *message, char *buf)
 {
+    ssize_t numWritten;
+
     circlog(L_DEBUG, "Handling user message...");
 
     // Check for errors encountered while parsing the USER message.
     if (message->parse_err == ERR_NEEDMOREPARAMS) {
         circlog(L_DEBUG, "Sending ERR_NEEDMOREPARAMS");
+        numWritten = replyf_err_needmoreparams(client, "USER", buf);
+        write(client->fd, buf, numWritten);
         return 1;
     }
 
     if (client->registered) {
         circlog(L_DEBUG, "Attempted re-registration by %s@%s.", client->username, "TODO");
+        numWritten = replyf_err_alreadyregistered(client, buf);
+        write(client->fd, buf, numWritten);
         return 1;
     } else {
         strcpy(client->username, message->message.user.username);
-        strcpy(client->username, message->message.user.fullname);
+        strcpy(client->fullname, message->message.user.fullname);
         client->receivedUser = true;
         if (client->receivedNick) {
             circlog(L_DEBUG, "Registration for %s@%s complete.", client->username, "TODO");
+            numWritten = replyf_rpl_welcome(client, buf);
+            write(client->fd, buf, numWritten);
             client->registered = true;
         }
     }
@@ -59,15 +93,30 @@ static int handle_user_message(struct context_client *client, struct irc_message
     return 0;
 }
 
+static int handle_unknown_message(struct context_client *client, struct irc_message *message, char *buf)
+{
+    ssize_t numWritten;
+
+    circlog(L_DEBUG, "Handling unknown command %s.", message->command);
+    numWritten = replyf_err_unknowncommand(client, message->command, buf);
+    write(client->fd, buf, numWritten);
+    return 0;
+}
+
 int handle_message(struct context_client *client, struct context_server *server, struct irc_message *message, char *buf)
 {
     switch (message->type) {
         case USER:
-            return handle_user_message(client, message, buf);
+            return handle_user_message(client, server, message, buf);
         case NICK:
-            return handle_nick_message(client, message, buf);
+            return handle_nick_message(client, server, message, buf);
+        case PING:
+            return 0;
+        case PONG:
+            return 0;
         default:
             circlog(L_DEBUG, "Unsupported message type: %s.", message->command);
+            return handle_unknown_message(client, message, buf);
+
     }
-    return 0;
 }

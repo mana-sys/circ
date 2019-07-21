@@ -1,8 +1,8 @@
 #include <stdio.h>
 
+#include "codes.h"
 #include "msgtok.h"
 #include "parser.h"
-#include "codes.h"
 
 #define NICK_MAX_SIZE 9
 
@@ -90,6 +90,7 @@ int parse_message(char *buf, struct irc_message *message)
         } else if (strcmp(tok, "USER") == 0) {
             return parse_message_user(message, saveptr);
         } else {
+            message->type = UNKNOWN;
             return 0;
         }
     }
