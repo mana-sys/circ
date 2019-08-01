@@ -1,5 +1,5 @@
 #include "vendor/unity.h"
-#include "../src/circ.h"
+#include "../../src/circ.h"
 
 void setUp()
 {

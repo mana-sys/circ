@@ -1,5 +1,5 @@
 #include "vendor/unity.h"
-#include "../src/hashtable.h"
+#include "../../src/hashtable.h"
 
 void setUp()
 {
