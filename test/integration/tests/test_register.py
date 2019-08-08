@@ -30,7 +30,7 @@ def test_register(circ_server):
     except socket.error as err:
         pytest.fail("Socket creation failed with error %s" % err)
 
-    assert 0
+    assert 1
 
 
 def test_register_reversed(circ_server):
