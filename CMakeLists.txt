@@ -2,13 +2,18 @@ cmake_minimum_required(VERSION 3.14)
 project(circ C)
 
 set(CMAKE_C_STANDARD 99)
+find_package(PythonInterp REQUIRED)
 
 add_subdirectory(src)
 add_subdirectory(test)
 
 enable_testing()
-add_test(NAME test_msgtok COMMAND test_msgtok)
-add_test(NAME test_parser COMMAND test_parser)
-add_test(NAME test_read_message COMMAND test_read_message)
-add_test(NAME test_hashtable COMMAND test_hashtable)
-add_test(NAME test_handlers COMMAND test_handlers)
+add_test(NAME unit_test_msgtok COMMAND test_msgtok)
+add_test(NAME unit_test_parser COMMAND test_parser)
+add_test(NAME unit_test_read_message COMMAND test_read_message)
+add_test(NAME unit_test_hashtable COMMAND test_hashtable)
+add_test(NAME unit_test_handlers COMMAND test_handlers)
+
+add_test(NAME integration_test_register
+        COMMAND pytest --circ $<TARGET_FILE:circ_sv>
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/integration)
