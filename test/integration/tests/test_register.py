@@ -34,4 +34,13 @@ def test_register(circ_server):
 
 
 def test_register_reversed(circ_server):
-    time.sleep(.01)
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect(("localhost", 50002))
+        s.send(b"USER ben * * :Ben Llanes\r\n")
+        s.send(b"NICK ben\r\n")
+        s.close()
+    except socket.error as err:
+        pytest.fail("Socket creation failed with error %s" % err)
+
+    assert 1
