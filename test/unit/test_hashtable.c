@@ -1,6 +1,16 @@
 #include "vendor/unity.h"
 #include "../../src/hashtable.h"
 
+void setUp()
+{
+
+}
+
+void tearDown()
+{
+
+}
+
 static void noop_destructor(void *ptr)
 {
 }

@@ -1,5 +1,16 @@
-#include "vendor/unity.h"
-#include "../../src/handlers.h"
+#include "unity.h"
+
+#include "handlers.h"
+
+void setUp()
+{
+
+}
+
+void tearDown()
+{
+
+}
 
 int main()
 {

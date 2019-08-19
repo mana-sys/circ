@@ -25,6 +25,16 @@
 
 static int g_current_test_case;
 
+void setUp()
+{
+
+}
+
+void tearDown()
+{
+
+}
+
 ssize_t read_full_message_mock(int fd, void *buf, size_t count)
 {
     memcpy((char *) buf, MOCK_FULL_MSG, strlen(MOCK_FULL_MSG));

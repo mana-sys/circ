@@ -1,5 +1,15 @@
 //#include "vendor/unity.h"
 //#include "../../src/circ.h"
+
+void setUp()
+{
+
+}
+
+void tearDown()
+{
+
+}
 //
 //
 //static void test_parse_msg_nick()
