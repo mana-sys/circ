@@ -3,16 +3,6 @@
 
 #define MSG_SIZE 512
 
-void setUp()
-{
-
-}
-
-void tearDown()
-{
-
-}
-
 static void test_handles_nick_msg()
 {
     char msg[] = "NICK ben\r\n";

@@ -11,7 +11,6 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-#include "circ.h"
 #include "context.h"
 #include "handlers.h"
 #include "hashtable.h"
@@ -28,6 +27,7 @@
 int sfd;
 
 struct hashtable_table *g_nicknames;
+
 pthread_mutex_t g_nicknames_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 struct conn_params {
@@ -38,7 +38,7 @@ struct conn_params {
 
 struct conn_info {
     bool registered, gotNickname, gotUsername;
-    char nickname[NICKNAME_SIZE + 1];
+    char nickname[9 + 1];
     char username[512];
     char fullname[512];
 };
@@ -74,7 +74,6 @@ static void *handle_conn(void *arg)
     memcpy(&params.addr, &((struct conn_params *) arg)->addr, sizeof(struct sockaddr_in));
 
     memset(&client, 0, sizeof(struct context_client));
-
     server.nick_table = g_nicknames;
     server.nick_table_mutex = g_nicknames_mutex;
     free(arg);
@@ -127,46 +126,15 @@ static void noop_destructor(void *ptr)
 
 }
 
+int accept_conn(int fd, struct conn_params **params)
+{
+    *params = malloc(sizeof(struct conn_params));
+    (*params)->len = sizeof(struct sockaddr_in);
+
+    return accept(fd, (struct sockaddr *) &(*params)->addr, &(*params)->len);
+}
+
 int main(int argc, char *argv[]) {
-//
-//    int opt;
-//    char *hostname = NULL, *port = NULL, *loglevelstr = NULL;
-//    loglevel_t loglevel;
-//
-//    while ((opt = getopt(argc, argv, ":h:p:l:")) != -1) {
-//        switch(opt) {
-//            case 'h':
-//                hostname = optarg;
-//                break;
-//            case 'p':
-//                port = optarg;
-//                break;
-//            case 'l':
-//                loglevelstr = optarg;
-//                break;
-//            case ':':
-//                fprintf(stderr, "Missing argument for option -%c.\n", optopt);
-//                printUsage();
-//                exit(EXIT_FAILURE);
-//            case '?':
-//                fprintf(stderr, "Unrecognized option -%c.\n", optopt);
-//                printUsage();
-//                exit(EXIT_FAILURE);
-//            default:
-//                fprintf(stderr, "Unexpected case in switch().\n");
-//                exit(EXIT_FAILURE);
-//        }
-//    }
-//
-//    fprintf(stderr, "hostname is %s\n", hostname);
-//    fprintf(stderr, "port is %s\n", port);
-//    fprintf(stderr, "loglevel is %s\n", loglevelstr);
-//
-//    if (parse_loglevel(loglevelstr) == -1) {
-//        fprintf(stderr, "Invalid argument for option -l specified.\n");
-//        printUsage();
-//        exit(EXIT_FAILURE);
-//    }
 
     set_loglevel(L_TRACE);
 

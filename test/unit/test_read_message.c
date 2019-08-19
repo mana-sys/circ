@@ -23,16 +23,6 @@
 
 #define READ_TWO_MESSAGES_TEST_CASE 5
 
-void setUp()
-{
-
-}
-
-void tearDown()
-{
-
-}
-
 static int g_current_test_case;
 
 ssize_t read_full_message_mock(int fd, void *buf, size_t count)

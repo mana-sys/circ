@@ -18,4 +18,10 @@ loglevel_t parse_loglevel(char * levelstr);
 void set_loglevel(loglevel_t level);
 void circlog(loglevel_t level, char *fmt, ...);
 
+#define logExitErr(...) {                           \
+    circlog(L_CRITICAL, __VA_ARGS__);               \
+    circlog(L_CRITICAL, "%s", strerror(errno));     \
+    exit(EXIT_FAILURE);                             \
+}
+
 #endif

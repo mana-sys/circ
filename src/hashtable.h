@@ -11,7 +11,7 @@
 typedef void (*destructor_t)(void *);
 
 struct hashtable_item {
-    char *key;
+    void *key;
     void *value;
     bool deleted;
 };
@@ -19,6 +19,7 @@ struct hashtable_item {
 struct hashtable_table {
     size_t size, occupied, cap;
     struct hashtable_item **items;
+    destructor_t key_destructor;
     destructor_t destructor;
 };
 

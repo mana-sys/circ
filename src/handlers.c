@@ -8,7 +8,26 @@
 #include "irc.h"
 #include "replies.h"
 
-static int handle_nick_message(struct context_client *client,
+static handler_t handlers[20];
+
+static bool handle_unknown_message (ctx_client_s *, ctx_server_s *, irc_message_s *, char *);
+static bool handle_nick_message    (ctx_client_s *, ctx_server_s *, irc_message_s *, char *);
+static bool handle_user_message    (ctx_client_s *, ctx_server_s *, irc_message_s *, char *);
+
+__attribute__((constructor))
+static void register_handlers()
+{
+    handlers[UNKNOWN] = handle_unknown_message;
+    handlers[NICK]    = handle_nick_message;
+    handlers[USER]    = handle_user_message;
+}
+
+int handle_message(struct context_client *client, struct context_server *server, struct irc_message *message, char *buf)
+{
+    return handlers[message->type](client, server, message, buf);
+}
+
+static bool handle_nick_message(struct context_client *client,
         struct context_server *server, struct irc_message *message, char *buf)
 {
     size_t numWritten;
@@ -58,7 +77,7 @@ static int handle_nick_message(struct context_client *client,
     return 0;
 }
 
-static int handle_user_message(struct context_client *client,
+static bool handle_user_message(struct context_client *client,
         struct context_server *server, struct irc_message *message, char *buf)
 {
     ssize_t numWritten;
@@ -93,7 +112,7 @@ static int handle_user_message(struct context_client *client,
     return 0;
 }
 
-static int handle_unknown_message(struct context_client *client, struct irc_message *message, char *buf)
+static bool handle_unknown_message(struct context_client *client, struct context_server *server, struct irc_message *message, char *buf)
 {
     ssize_t numWritten;
 
@@ -103,20 +122,4 @@ static int handle_unknown_message(struct context_client *client, struct irc_mess
     return 0;
 }
 
-int handle_message(struct context_client *client, struct context_server *server, struct irc_message *message, char *buf)
-{
-    switch (message->type) {
-        case USER:
-            return handle_user_message(client, server, message, buf);
-        case NICK:
-            return handle_nick_message(client, server, message, buf);
-        case PING:
-            return 0;
-        case PONG:
-            return 0;
-        default:
-            circlog(L_DEBUG, "Unsupported message type: %s.", message->command);
-            return handle_unknown_message(client, message, buf);
 
-    }
-}

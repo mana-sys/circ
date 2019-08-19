@@ -45,7 +45,7 @@ static void circlog_internal(loglevel_t level, char *fmt, va_list argptr)
 
     switch (level) {
         case L_CRITICAL:
-            levelstr = "CRITICAL";
+            levelstr = "FATAL";
             break;
         case L_ERROR:
             levelstr = "ERROR";
@@ -67,7 +67,7 @@ static void circlog_internal(loglevel_t level, char *fmt, va_list argptr)
     }
 
     flockfile(stdout);
-    printf("[%.6s] %s - ", levelstr, buf);
+    printf("[%.5s]\t %s - ", levelstr, buf);
     vprintf(fmt, argptr);
     printf("\n");
     fflush(stdout);

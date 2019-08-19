@@ -29,7 +29,7 @@ struct irc_message_privmsg {
     char *contents;
 };
 
-struct irc_message {
+typedef struct irc_message {
     enum irc_message_type type;
     char *command;
     int parse_err;
@@ -38,6 +38,6 @@ struct irc_message {
         struct irc_message_user user;
         struct irc_message_privmsg privmsg;
     } message;
-};
+} irc_message_s;
 
 #endif

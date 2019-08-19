@@ -41,8 +41,20 @@ ssize_t read_message(int fd, char *msg, char *buf, ssize_t *storeTotalRead, bool
     int res;
 
     for (;;) {
+
+        /*
+         * First, see if we can read a new message with what we already have inside buf.
+         */
         res = read_to_CRLF(fd, buf, storeTotalRead, &gotCRLF, &msgLen);
         if (res == 0 || res == -1) return res;
+
+        /*
+         * If we find "\r\n", then we have a message to read. However, it is possible that this message
+         * is the ending fragment of a message that exceeded 512 bytes in length. We check if we should
+         * discard this ending fragment. If so, discard the fragment and mark the discard flag as false.
+         * If we don't, then copy the message to the output message buffer, and shift the bookkeeping
+         * buffer to remove that we found.
+         */
         if (gotCRLF) {
             if (*storeDiscardNext) {
                 *storeDiscardNext = false;
@@ -56,6 +68,10 @@ ssize_t read_message(int fd, char *msg, char *buf, ssize_t *storeTotalRead, bool
                 *storeTotalRead -= msgLen;
                 return msgLen;
             }
+
+        /*
+         *
+         */
         } else {
             *storeTotalRead = 0;
 

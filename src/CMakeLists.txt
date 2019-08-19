@@ -13,7 +13,7 @@ add_executable(circ circ.c config.c log.c server.c)
 add_executable(ghashtable_test ghashtable_test.c)
 add_definitions (${GLib_CFLAGS})
 
-target_link_libraries(circ ${GLib_LIBRARIES})
+target_link_libraries(circ ${GLib_LIBRARIES} Threads::Threads)
 target_link_libraries (ghashtable_test ${GLib_LIBRARIES})
 
 target_link_libraries(circ_sv Threads::Threads m)
