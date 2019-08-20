@@ -30,6 +30,9 @@ int handle_read(conn_s *conn)
      */
     while (conn_read_message(conn)) {
         circlog(L_DEBUG, "Received message: '%s'", conn->message);
+
+        parse_message(conn->message, &message);
+        handle_message1(&conn->client, NULL, &message, conn->response);
     }
 
     /*
