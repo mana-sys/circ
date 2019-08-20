@@ -144,6 +144,24 @@ static void test_no_crlf_511_bytes()
     expect_total_read(1);
 }
 
+static void test_no_crlf_511_bytes_with_discard_next()
+{
+    char *result;
+    char message[IRC_MSG_SIZE];
+
+    memset(message, 'a', IRC_MSG_SIZE - 2);
+    message[IRC_MSG_SIZE - 2] = '\r';
+
+    with_store_buffer(message);
+    with_discard_next();
+
+    result = conn_read_message(&conn);
+
+    expect_message_buffer(NULL, result);
+    expect_total_read(1);
+    expect_no_discard_next();
+}
+
 static void test_no_crlf_512_bytes()
 {
     char *result;
@@ -160,8 +178,20 @@ static void test_no_crlf_512_bytes()
     result = conn_read_message(&conn);
     TEST_ASSERT_EQUAL_STRING_LEN(expected, result, IRC_MSG_SIZE);
     expect_total_read(2);
+}
 
+static void test_no_crlf_512_bytes_with_discard_next()
+{
+    char message[IRC_MSG_SIZE];
 
+    memset(message, 'a', IRC_MSG_SIZE);
+
+    with_store_buffer(message);
+    with_discard_next();
+
+    expect_message_buffer(NULL, conn_read_message(&conn));
+    expect_total_read(2);
+    expect_no_discard_next();
 }
 
 int main(int argc, char *argv[])
@@ -176,7 +206,9 @@ int main(int argc, char *argv[])
     RUN_TEST(test_two_messages);
     RUN_TEST(test_two_messages_discard_next);
     RUN_TEST(test_no_crlf_511_bytes);
+    RUN_TEST(test_no_crlf_511_bytes_with_discard_next);
     RUN_TEST(test_no_crlf_512_bytes);
+    RUN_TEST(test_no_crlf_512_bytes_with_discard_next);
 
     return UnityEnd();
 }
