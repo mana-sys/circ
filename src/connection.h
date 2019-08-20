@@ -11,7 +11,7 @@
 typedef struct conn_s {
     bool     discardNext;           /* Whether to discard the next message. */
     ssize_t  totalRead;             /* Total bytes in the store buffer. */
-    struct client_s client;
+    client_s client;
     char     message[IRC_MSG_SIZE]; /* Buffer to store a full individual message. */
     char     response[IRC_MSG_SIZE];
     char     store[IRC_MSG_SIZE];   /* Buffer to store bytes read from the client socket. */
@@ -24,6 +24,5 @@ typedef struct conn_s {
  * @return 0 on success, -1 on error
  */
 int handle_read(conn_s *conn);
-
 
 #endif //CIRC_CONNECTION_H
