@@ -20,51 +20,20 @@
 GHashTable *g_nicknames;    /* Map from nicknames to client IDs */
 GHashTable *g_clients;      /* Map from client IDs to client info */
 
-pthread_mutex_t g_nicknames_mtx = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t g_clients_mtx   = PTHREAD_MUTEX_INITIALIZER;
+//pthread_mutex_t g_nicknames_mtx = PTHREAD_MUTEX_INITIALIZER;
+//pthread_mutex_t g_clients_mtx   = PTHREAD_MUTEX_INITIALIZER;
 
 static int id = 0;
 
-struct conn_args_s {
-    int fd, id;
-    socklen_t len;
-    struct sockaddr_in addr;
-};
-
-static void *on_accept(struct conn_args_s *arg)
-{
-    struct circ_client client;
-
-    memset(&client, 0, sizeof(struct circ_client));
-    client.fd = arg->fd;
-    client.clientId = arg->id;
-
-    pthread_mutex_lock(&g_clients_mtx);
-    g_hash_table_insert(g_clients, GINT_TO_POINTER(client.clientId), &client);
-    pthread_mutex_unlock(&g_clients_mtx);
-
-    return NULL;
-}
-
-void client_destroy_func(gpointer data)
-{
-    free(data);
-}
-
 void start_server(const struct config_s conf[static 1])
 {
-    int sfd, cfd, epfd, ready, j;
+    int sfd, cfd, epfd, ready, readyFd, j;
     socklen_t len;
-    char host[0xFF];
     struct sockaddr_in addr, claddr;
     struct epoll_event event;
     struct epoll_event events[MAXEVENTS];
+    conn_s server_conn;                     /* Dummy conn_s struct for the server to be passed to epoll. */
     conn_s *conn;
-
-
-    pthread_t t;
-
-    struct conn_args_s *args;
 
     /* Initialize global data structures */
     g_nicknames = g_hash_table_new((GHashFunc) g_string_hash, (GEqualFunc) g_string_equal);
@@ -105,26 +74,32 @@ void start_server(const struct config_s conf[static 1])
     if (epfd == -1)
         logExitErr("Fatal error: epoll_create()");
 
+    server_conn.client.fd = sfd;
+
     event.events = EPOLLIN | EPOLLERR;
-    event.data.fd = sfd;
+    event.data.ptr = &server_conn;
+
 
     if (epoll_ctl(epfd, EPOLL_CTL_ADD, sfd, &event) == -1)
         logExitErr("Fatal error: epoll_ctl()");
 
     for (;;) {
         ready = epoll_wait(epfd, events, MAXEVENTS, -1); /* No timeout on epoll. */
-
+        circlog(L_TRACE, "Handling %d ready file descriptor(s).", ready);
         /*
          * Loop through all available events. If data can be read from the
          * server file descriptor, then we have a new connection. Additionally,
          * handle data from all current connections.
          */
         for (j = 0; j < ready; j++) {
-            if (events[ready].data.fd == sfd) {
+            readyFd = ((conn_s *) events[j].data.ptr)->client.fd;
+            if (readyFd == sfd) {
                 len = sizeof(struct sockaddr_in);
-                cfd = accept(events[ready].data.fd, (struct sockaddr *) &claddr, &len);
+                cfd = accept(readyFd, (struct sockaddr *) &claddr, &len);
                 if (cfd == -1)
                     logExitErr("Fatal error: accept()");
+
+                circlog(L_INFO, "Accepting new connection.");
 
                 /*
                  * Allocate new connection struct to represent the new
@@ -132,6 +107,19 @@ void start_server(const struct config_s conf[static 1])
                  */
                 conn = calloc(1, sizeof(conn_s));
                 conn->client.fd = cfd;
+                conn->client.clientId = id++;
+
+                /*
+                 * Add client to the client hash, using the ID counter.
+                 * Locking with the mutex is not needed since we are single-
+                 * threaded for now.
+                 */
+
+                /* Mutex is not needed since we are single-threaded for now. */
+
+                /* pthread_mutex_lock(&g_clients_mtx); */
+                g_hash_table_insert(g_clients, GINT_TO_POINTER(conn->client.clientId), &conn->client);
+                /* pthread_mutex_unlock(&g_clients_mtx); */
 
                 /*
                  * Configure the epoll event. The event will store a pointer
@@ -149,37 +137,15 @@ void start_server(const struct config_s conf[static 1])
                 }
 
                 continue;
+            } else {
+
+                /*
+                 * Ready file descriptor was a client. Read any available data
+                 * and handle the resultant messages.
+                 */
+                circlog(L_DEBUG, "handling connection");
+                handle_read((conn_s *) event.data.ptr);
             }
         }
     }
-
-//    for (;;) {
-//        args = calloc(1, sizeof(struct conn_args_s));
-//        len = sizeof(struct sockaddr_in);
-//
-//        cfd = accept(sfd, (struct sockaddr *) &args->addr, &args->len);
-//        if (cfd == -1) {
-//            circlog(L_ERROR, "Unable to accept connection.");
-//            goto err;
-//        }
-//
-//        if (getnameinfo((struct sockaddr *) &args->addr, len, host, sizeof(host), NULL, 0, 0) == -1) {
-//            circlog(L_ERROR, "Unable to get name info.");
-//            goto err;
-//        }
-//
-//        if (pthread_create(&t, NULL, on_accept, NULL) != 0) {
-//            circlog(L_ERROR, "Unable to create new thread for incoming connection.");
-//            goto err;
-//        }
-//
-//        pthread_detach(t);
-//        id++;
-//        continue;
-//
-//err:
-//        free(args);
-//
-//    }
-
 }
