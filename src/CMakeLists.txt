@@ -9,7 +9,7 @@ include_directories(${GLib_INCLUDE_DIRS})
 
 add_executable(circ_sv msgtok.c circ_sv.c hashtable.c circlist.c read_message.c log.c handlers.c parser.c)
 add_executable(circ_cl circ_cl.c)
-add_executable(circ circ.c config.c log.c server.c)
+add_executable(circ circ.c config.c log.c server.c connection.c read_message.c)
 add_executable(ghashtable_test ghashtable_test.c)
 add_definitions (${GLib_CFLAGS})
 
