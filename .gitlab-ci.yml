@@ -1,0 +1,7 @@
+image: "gcc"
+before_script:
+  - echo "Running script"
+
+ctest:
+    script:
+      - echo "Running ctest"
