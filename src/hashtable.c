@@ -107,7 +107,7 @@ int hashtable_insert(struct hashtable_table *table, const char *key, void *value
         if (!table->items[loc]->deleted) {
             if (strcmp(key, table->items[loc]->key) == 0) {
                 table->destructor(table->items[loc]->value);
-                table->items[loc]->value = strdup(value);
+                table->items[loc]->value = value;
                 return 0;
             }
         } else {

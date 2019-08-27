@@ -278,7 +278,7 @@ static void test_hashtable_insert_to_full_and_remove_2x()
     size_t result, i;
     size_t seq[13] = {7, 4, 1, 2, 0, 8, 9, 5, 3, 11, 10, 12, 6};
     void *value;
-    char key[5];
+    char key[6];
 
     table = hashtable_new_table(13, noop_destructor);
 
