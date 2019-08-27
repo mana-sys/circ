@@ -1,5 +1,5 @@
-#include "vendor/unity.h"
-#include "../../src/msgtok.h"
+#include "msgtok.h"
+#include "unity.h"
 
 #define MSG_SIZE 512
 

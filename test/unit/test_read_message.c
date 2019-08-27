@@ -1,7 +1,7 @@
 #include <string.h>
 
-#include "vendor/unity.h"
-#include "../../src/read_message.h"
+#include "read_message.h"
+#include "unity.h"
 
 #define MOCK_FULL_MSG_TEST_CASE 1
 #define MOCK_FULL_MSG "NICK ben\r\n"
