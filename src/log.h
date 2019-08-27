@@ -24,4 +24,12 @@ void circlog(loglevel_t level, char *fmt, ...);
     exit(EXIT_FAILURE);                             \
 }
 
+#define Log_Trace(...) circlog(L_TRACE, __VA_ARGS__)
+#define Log_Debug(...) circlog(L_DEBUG, __VA_ARGS__)
+#define Log_Info(...) circlog(L_INFO, __VA_ARGS__)
+#define Log_Warning(...) circlog(L_WARNING, __VA_ARGS__)
+#define Log_Error(...) circlog(L_ERROR, __VA_ARGS__)
+#define Log_Critical(...) circlog(L_CRITICAL, __VA_ARGS__)
+
+
 #endif

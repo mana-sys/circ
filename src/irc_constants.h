@@ -6,6 +6,7 @@
 
 #define IRC_MSG_SIZE 512
 #define IRC_NICK_SIZE 9
+#define IRC_HOSTNAME_MAX 63
 
 
 #endif

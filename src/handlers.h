@@ -10,9 +10,10 @@
 #include "irc.h"
 
 typedef bool (*handler_t)(struct context_client *, struct context_server *, struct irc_message *, char *buf);
+typedef bool (*handler1_t)(client_s *, server_s *, irc_message_s *, char *, size_t *);
 
 int handle_message(struct context_client *client, struct context_server *server, struct irc_message *message, char *buf);
 
-int handle_message1(client_s *client, server_s *server, irc_message_s *message, char *responseBuffer);
+int handle_message1(client_s *client, server_s *server, irc_message_s *message, char *responseBuffer, size_t *len);
 
 #endif

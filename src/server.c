@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+
 #include "common.h"
 #include "connection.h"
 #include "context.h"
@@ -23,27 +24,49 @@ GHashTable *g_clients;      /* Map from client IDs to client info */
 //pthread_mutex_t g_nicknames_mtx = PTHREAD_MUTEX_INITIALIZER;
 //pthread_mutex_t g_clients_mtx   = PTHREAD_MUTEX_INITIALIZER;
 
-static int id = 0;
+/*
+ * Used to assign IDs to clients. This variable starts at 1 because
+ * the hash table holding clients to nicknames cannot distinguish
+ * between a key that does not exist and a key whose corresponding
+ * value is 0.
+ */
+static int id = 1;
+
+
+static void nicknames_hash_key_destroy_func(gpointer data)
+{
+    g_free(data);
+}
 
 void start_server(const struct config_s conf[static 1])
 {
-    int sfd, cfd, epfd, ready, readyFd, j;
+    int sfd, cfd, epfd, ready, readyFd, j, readResult, optval;
     socklen_t len;
     struct sockaddr_in addr, claddr;
     struct epoll_event event;
     struct epoll_event events[MAXEVENTS];
     conn_s server_conn;                     /* Dummy conn_s struct for the server to be passed to epoll. */
     conn_s *conn;
+    char hostname[IRC_HOSTNAME_MAX + 1];
 
     /* Initialize global data structures */
-    g_nicknames = g_hash_table_new((GHashFunc) g_string_hash, (GEqualFunc) g_string_equal);
+    g_nicknames = g_hash_table_new_full((GHashFunc) g_str_hash, (GEqualFunc) g_str_equal,
+            nicknames_hash_key_destroy_func, NULL);
     g_clients   = g_hash_table_new(g_direct_hash, g_direct_equal);
+
+    gethostname(hostname, IRC_HOSTNAME_MAX);
+    circlog(L_DEBUG, "Hostname is %s.", hostname);
 
     circlog(L_DEBUG, "Using hostname %s and port %u.", conf->host, conf->port);
 
     circlog(L_TRACE, "Creating server socket.");
     if ((sfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
         logExitErr("Fatal error: socket()");
+
+    optval = 1;
+    if (setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == -1)
+        logExitErr("Fatal error: setsockopt()");
+
     circlog(L_TRACE, "Server socket created successfully.");
 
     circlog(L_TRACE, "Binding socket...");
@@ -108,6 +131,13 @@ void start_server(const struct config_s conf[static 1])
                 conn = calloc(1, sizeof(conn_s));
                 conn->client.fd = cfd;
                 conn->client.clientId = id++;
+                getnameinfo((struct sockaddr *) &claddr, len, conn->client.hostname, IRC_HOSTNAME_MAX, NULL,
+                        0, 0);
+
+                conn->server.clients = g_clients;
+                conn->server.nicks = g_nicknames;
+                conn->server.hostname = hostname;
+
 
                 /*
                  * Add client to the client hash, using the ID counter.
@@ -143,8 +173,15 @@ void start_server(const struct config_s conf[static 1])
                  * Ready file descriptor was a client. Read any available data
                  * and handle the resultant messages.
                  */
-                circlog(L_DEBUG, "handling connection");
-                handle_read((conn_s *) event.data.ptr);
+                circlog(L_DEBUG, "Handling connection for client =%d", ((conn_s *) events[j].data.ptr)->client.clientId);
+                readResult = handle_read((conn_s *) events[j].data.ptr);
+
+                if (readResult == CONN_RESULT_ERROR) {
+                    circlog(L_WARNING, "Connection encountered error.");
+                } else if (readResult == CONN_RESULT_CLOSE) {
+                    circlog(L_INFO, "Client closed connection.");
+//                    g_hash_table_remove(g_clients, )
+                }
             }
         }
     }

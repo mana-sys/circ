@@ -3,14 +3,24 @@
 #include "read_message.h"
 
 static conn_s conn;
+static char store_buffer[IRC_MSG_SIZE];
+static char expected_message[IRC_MSG_SIZE];
 
-void clear_conn() {
+void clear_conn()
+{
     memset(&conn, 0, sizeof(struct conn_s));
+}
+
+void clear_buffers()
+{
+    memset(store_buffer, 0, IRC_MSG_SIZE);
+    memset(expected_message, 0, IRC_MSG_SIZE);
 }
 
 void setUp()
 {
     clear_conn();
+    clear_buffers();
 }
 
 void tearDown()
@@ -126,21 +136,19 @@ static void test_two_messages_discard_next()
 static void test_no_crlf_511_bytes()
 {
     char *result;
-    char message[IRC_MSG_SIZE];
-    char expected[IRC_MSG_SIZE];
 
-    memset(message, 'a', IRC_MSG_SIZE - 2);
-    message[IRC_MSG_SIZE - 2] = '\r';
+    memset(store_buffer, 'a', IRC_MSG_SIZE - 2);
+    store_buffer[IRC_MSG_SIZE - 2] = '\r';
 
-    memset(expected, 'a', IRC_MSG_SIZE - 2);
-    expected[IRC_MSG_SIZE - 2] = '\r';
-    expected[IRC_MSG_SIZE - 1] = '\n';
+    memset(expected_message, 'a', IRC_MSG_SIZE - 2);
+    expected_message[IRC_MSG_SIZE - 2] = '\r';
+    expected_message[IRC_MSG_SIZE - 1] = '\n';
 
-    with_store_buffer(message);
+    with_store_buffer(store_buffer);
 
     result = conn_read_message(&conn);
 
-    TEST_ASSERT_EQUAL_STRING_LEN(expected, result, IRC_MSG_SIZE);
+    TEST_ASSERT_EQUAL_STRING_LEN(expected_message, result, IRC_MSG_SIZE);
     expect_total_read(1);
 }
 

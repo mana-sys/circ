@@ -4,6 +4,8 @@ project(circ C)
 set(CMAKE_C_STANDARD 99)
 find_package(PythonInterp REQUIRED)
 
+include_directories(include)
+
 add_subdirectory(src)
 add_subdirectory(test)
 

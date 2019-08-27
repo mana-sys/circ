@@ -8,8 +8,6 @@
 
 int handle_read(conn_s *conn)
 {
-    char *crlf;
-    size_t messageLen, remainingLen;
     ssize_t numRead;
     irc_message_s message;
 
@@ -21,7 +19,7 @@ int handle_read(conn_s *conn)
     numRead = read(conn->client.fd, conn->store, IRC_MSG_SIZE - conn->totalRead);
     circlog(L_TRACE, "Read %ld bytes", numRead);
     if (numRead == -1)
-        return numRead;
+        return CONN_RESULT_ERROR;
 
     conn->totalRead += numRead;
 
@@ -31,8 +29,17 @@ int handle_read(conn_s *conn)
     while (conn_read_message(conn)) {
         circlog(L_DEBUG, "Received message: '%s'", conn->message);
 
+        conn->responseLen = 0;
         parse_message(conn->message, &message);
-        handle_message1(&conn->client, NULL, &message, conn->response);
+        handle_message1(&conn->client, &conn->server, &message, conn->response, &conn->responseLen);
+
+        /*
+         * If we have a message to send, then send it.
+         */
+        if (conn->responseLen) {
+            circlog(L_DEBUG, "Sending response message.");
+            write(conn->client.fd, conn->response, conn->responseLen);
+        }
     }
 
     /*
@@ -41,6 +48,7 @@ int handle_read(conn_s *conn)
      */
     if (numRead == 0) {
         close(conn->client.fd);
+        return CONN_RESULT_CLOSE;
     }
 
     return 0;

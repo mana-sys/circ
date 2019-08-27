@@ -3,11 +3,14 @@
 #include "codes.h"
 #include "msgtok.h"
 #include "parser.h"
+#include "log.h"
 
 #define NICK_MAX_SIZE 9
 
 static int parse_message_nick    (struct irc_message *message, char *saveptr);
 static int parse_message_user    (struct irc_message *message, char *saveptr);
+static int parse_message_ping    (struct irc_message *message, char *saveptr);
+static int parse_message_pong    (struct irc_message *message, char *saveptr);
 static int parse_message_privmsg (struct irc_message *message, char *saveptr);
 
 static int parse_message_nick(struct irc_message *message, char *saveptr)
@@ -27,6 +30,7 @@ static int parse_message_nick(struct irc_message *message, char *saveptr)
         return ERR_ERRONEUSNICKNAME;
     }
 
+    Log_Trace("Parsed nick is %s", tok);
     message->message.nick.nick = tok;
     message->parse_err = 0;
 
@@ -77,6 +81,18 @@ static int parse_message_user(struct irc_message *message, char *saveptr)
 
 }
 
+static int parse_message_ping    (struct irc_message *message, char *saveptr)
+{
+    message->type = PING;
+    return 0;
+}
+
+static int parse_message_pong (struct irc_message *message, char *saveptr)
+{
+    message->type = PONG;
+    return 0;
+}
+
 int parse_message(char *buf, struct irc_message *message)
 {
     size_t toklen;
@@ -89,6 +105,10 @@ int parse_message(char *buf, struct irc_message *message)
             return parse_message_nick(message, saveptr);
         } else if (strcmp(tok, "USER") == 0) {
             return parse_message_user(message, saveptr);
+        } else if (strcmp(tok, "PING") == 0) {
+            return parse_message_ping(message, saveptr);
+        } else if (strcmp(tok, "PONG") == 0) {
+            return parse_message_pong(message, saveptr);
         } else {
             message->type = UNKNOWN;
             return 0;
