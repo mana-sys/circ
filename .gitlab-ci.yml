@@ -1,4 +1,4 @@
-image: "gcc"
+image: "gcc:8.3.0"
 
 before_script:
   - apt-get update -qq && apt-get install -y -qq glib2.0-dev python3-pip lcov
