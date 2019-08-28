@@ -1,7 +1,7 @@
 image: "gcc"
 
 before_script:
-  - apt-get update -qq && apt-get install -y -qq glib2.0-dev python3-pip
+  - apt-get update -qq && apt-get install -y -qq glib2.0-dev python3-pip lcov
   - pip3 install pytest
   - wget -q https://github.com/Kitware/CMake/releases/download/v3.15.2/cmake-3.15.2-Linux-x86_64.tar.gz
   - tar -C /usr/local/ -xzf cmake-3.15.2-Linux-x86_64.tar.gz
@@ -15,3 +15,6 @@ ctest:
       - cmake ..
       - make
       - ctest -VV
+      - lcov --directory . --capture --output-file coverage.info
+      - lcov --remove coverage.info '*/test/*' --output-file coverage.info
+      - lcov --list coverage.info
