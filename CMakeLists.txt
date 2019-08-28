@@ -16,7 +16,6 @@ add_test(NAME unit_test_read_message COMMAND test_read_message)
 add_test(NAME unit_test_hashtable COMMAND test_hashtable)
 add_test(NAME unit_test_handlers COMMAND test_handlers)
 add_test(NAME unit_test_read_message1 COMMAND test_read_message1)
-
 add_test(NAME integration_test_register
         COMMAND pytest --circ $<TARGET_FILE:circ_sv>
         ${CMAKE_CURRENT_SOURCE_DIR}/test/integration)

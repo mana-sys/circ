@@ -18,7 +18,7 @@ add_compile_options(-fprofile-arcs -ftest-coverage)
 add_link_options(${COVERAGE_LINKER_FLAGS})
 
 add_executable(test_msgtok test_msgtok.c ${UNITY_SOURCES} ${CMAKE_SOURCE_DIR}/src/msgtok.c)
-add_executable(test_parser test_parser.c ${UNITY_SOURCES} ${CMAKE_SOURCE_DIR}/src/msgtok.c)
+add_executable(test_parser test_parser.c ${UNITY_SOURCES} ${CMAKE_SOURCE_DIR}/src/msgtok.c ${CMAKE_SOURCE_DIR}/src/parser.c ${CMAKE_SOURCE_DIR}/src/log.c)
 add_executable(test_read_message test_read_message.c ${UNITY_SOURCES} ${CMAKE_SOURCE_DIR}/src/read_message.c)
 add_executable(test_hashtable test_hashtable.c ${UNITY_SOURCES} ${CMAKE_SOURCE_DIR}/src/hashtable.c)
 add_executable(test_handlers test_handlers.c ${UNITY_SOURCES} ${CMAKE_SOURCE_DIR}/src/handlers.c ${CMAKE_SOURCE_DIR}/src/log.c ${CMAKE_SOURCE_DIR}/src/hashtable.c

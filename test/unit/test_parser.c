@@ -1,5 +1,5 @@
-//#include "vendor/unity.h"
-//#include "../../src/circ.h"
+#include "unity.h"
+#include "parser.h"
 
 void setUp()
 {
@@ -10,23 +10,23 @@ void tearDown()
 {
 
 }
-//
-//
-//static void test_parse_msg_nick()
-//{
-//    char msg[] = "NICK ben\r\n";
-//    struct circ_msg parsedMsg;
-//    parse_msg(msg, &parsedMsg);
-//
-//    TEST_ASSERT_EQUAL_INT(MSGNICK, parsedMsg.msgType);
-//    TEST_ASSERT_EQUAL_STRING("ben", parsedMsg.msgNick.nick);
-//}
-//
+
+
+static void test_parse_msg_nick()
+{
+    char msg[] = "NICK ben\r\n";
+    struct irc_message parsedMsg;
+    parse_message(msg, &parsedMsg);
+
+    TEST_ASSERT_EQUAL_INT(NICK, parsedMsg.type);
+    TEST_ASSERT_EQUAL_STRING("ben", parsedMsg.message.nick.nick);
+}
+
 //static void test_parse_msg_nick_no_nickname_given()
 //{
 //    char msg[] = "NICK\r\n";
-//    struct circ_msg parsedMsg;
-//    int result = parse_msg(msg, &parsedMsg);
+//    struct irc_message parsedMsg;
+//    int result = parse_message(msg, &parsedMsg);
 //
 //    TEST_ASSERT_EQUAL_INT(ERR_NONICKNAMEGIVEN, result);
 //}
@@ -52,10 +52,10 @@ void tearDown()
 //}
 
 int main() {
-//    UnityBegin("test_parser.c");
-//    RUN_TEST(test_parse_msg_nick);
+    UnityBegin("test_parser.c");
+    RUN_TEST(test_parse_msg_nick);
 //    RUN_TEST(test_parse_msg_nick_no_nickname_given);
 //    RUN_TEST(test_parse_msg_nick_erroneus_nickname);
 //    RUN_TEST(test_parse_msg_user);
-//    return UnityEnd();
+    return UnityEnd();
 }

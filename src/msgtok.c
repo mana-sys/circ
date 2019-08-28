@@ -10,6 +10,7 @@ char *msgtok(char * str, size_t *toklen)
 
     if (str == NULL) {
         if (msgtok_ptr == NULL) {
+            *toklen = 0;
             return NULL;
         }
         str = msgtok_ptr;
@@ -21,6 +22,7 @@ char *msgtok(char * str, size_t *toklen)
 
     end = strstr(str, CRLF);
     if (end == NULL) {
+        *toklen = 0;
         return NULL;
     }
 
@@ -69,6 +71,7 @@ char *msgtok_r(char *str, size_t *toklen, char **saveptr)
 
     if (str == NULL) {
         if (*saveptr == NULL) {
+            *toklen = 0;
             return NULL;
         }
         str = *saveptr;
@@ -80,6 +83,7 @@ char *msgtok_r(char *str, size_t *toklen, char **saveptr)
 
     end = strstr(str, CRLF);
     if (end == NULL) {
+        *toklen = 0;
         return NULL;
     }
 

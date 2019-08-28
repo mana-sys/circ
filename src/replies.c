@@ -6,7 +6,7 @@
 #include "codes.h"
 #include "replies.h"
 
-#define FORMAT_RPL_WELCOME "%03d %s Welcome to the Internet Relay Network %s!%s@%s\r\n"
+#define FORMAT_RPL_WELCOME "%03d %s :Welcome to the Internet Relay Network %s!%s@%s\r\n"
 #define NICK_OR_STAR(client) (client->receivedNick ? client->nickname : "*")
 
 int Reply_RplWelcome           (client_s * client, char *response)
@@ -29,7 +29,7 @@ int Reply_ErrNoNicknameGiven   (client_s *client, char *response)
 int Reply_ErrNicknameInUse     (client_s *client, const char *failedNick, char *response)
 {
     return sprintf(response, "%d %s %s %s\r\n",
-                   ERR_NONICKNAMEGIVEN, client->receivedNick ? client->nickname : "*",
+                   ERR_NICKNAMEINUSE, client->receivedNick ? client->nickname : "*",
                    failedNick, STR_ERR_NICKNAMEINUSE);
 }
 
