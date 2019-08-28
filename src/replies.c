@@ -15,9 +15,25 @@ int Reply_RplWelcome           (client_s * client, char *response)
             client->nickname, client->username, client->hostname);
 }
 
+int Reply_RplMotdStart         (client_s * client, char *response)
+{
+    return sprintf(response, FMT_RPL_MOTDSTART, RPL_MOTDSTART, NICK_OR_STAR(client), "servername");
+}
+
+int Reply_RplEndOfMotd (client_s *client, char *response)
+{
+    return sprintf(response, FMT_RPL_ENDOFMOTD, RPL_ENDOFMOTD, NICK_OR_STAR(client));
+}
+
 int Reply_ErrNoSuchNick (client_s *client, const char *nick, char *response)
 {
    return sprintf(response, "%d %s %s %s\r\n", ERR_NOSUCHNICK, NICK_OR_STAR(client), nick, STR_ERR_NOSUCHNICK);
+}
+
+int Reply_ErrNoMotd (client_s *client, char *response)
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, "%d %s %s\r\n",
+            ERR_NOMOTD, NICK_OR_STAR(client), STR_ERR_NOMOTD);
 }
 
 int Reply_ErrNoNicknameGiven   (client_s *client, char *response)

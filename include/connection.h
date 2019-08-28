@@ -5,6 +5,8 @@
 #ifndef CIRC_CONNECTION_H
 #define CIRC_CONNECTION_H
 
+#include <glib.h>
+
 #include "client.h"
 #include "irc_constants.h"
 
@@ -24,6 +26,7 @@ typedef struct conn_s {
     char     message[IRC_MSG_SIZE];     /* Buffer to store a full individual message. */
     char     response[IRC_MSG_SIZE];    /* Buffer to hold a response message. */
     char     store[IRC_MSG_SIZE];       /* Buffer to store bytes read from the client socket. */
+    GQueue * responses;                 /* Queue to hold responses to be sent. */
 } conn_s;
 
 /**

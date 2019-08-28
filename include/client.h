@@ -20,6 +20,7 @@ typedef struct server_s {
     GHashTable *nicks;      /* Map from nicks (string) to client IDs (int) */
     GHashTable *clients;    /* Map from client IDs (int) to clients (client_s *) */
     const char *hostname;   /* Pointer to the server's hostname. */
+    const char *motd;
 } server_s;
 
 /**

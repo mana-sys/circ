@@ -6,7 +6,7 @@
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
+#include <motd.h>
 
 #include "common.h"
 #include "connection.h"
@@ -39,6 +39,7 @@ static void nicknames_hash_key_destroy_func(gpointer data)
 
 void start_server(const struct config_s conf[static 1])
 {
+    char *motd;
     int sfd, cfd, epfd, ready, readyFd, j, readResult, optval;
     socklen_t len;
     struct sockaddr_in addr, claddr;
@@ -47,6 +48,9 @@ void start_server(const struct config_s conf[static 1])
     conn_s server_conn;                     /* Dummy conn_s struct for the server to be passed to epoll. */
     conn_s *conn;
     char hostname[IRC_HOSTNAME_MAX + 1];
+
+    /* Get message of the day */
+    motd = Motd_Get("motd.txt");
 
     /* Initialize global data structures */
     g_nicknames = g_hash_table_new_full((GHashFunc) g_str_hash, (GEqualFunc) g_str_equal,
@@ -133,10 +137,11 @@ void start_server(const struct config_s conf[static 1])
                 getnameinfo((struct sockaddr *) &claddr, len, conn->client.hostname, IRC_HOSTNAME_MAX, NULL,
                         0, 0);
 
+                conn->responses = g_queue_new();
                 conn->server.clients = g_clients;
                 conn->server.nicks = g_nicknames;
                 conn->server.hostname = hostname;
-
+                conn->server.motd = motd;
 
                 /*
                  * Add client to the client hash, using the ID counter.

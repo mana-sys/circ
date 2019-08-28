@@ -17,6 +17,7 @@ static bool Handler_Nick    (client_s *, server_s *, irc_message_s *, char *, si
 static bool Handler_User    (client_s *, server_s *, irc_message_s *, char *, size_t *);
 static bool Handler_Ping    (client_s *, server_s *, irc_message_s *, char *, size_t *);
 static bool Handler_Pong    (client_s *, server_s *, irc_message_s *, char *, size_t *);
+static bool Handler_Motd    (client_s *, server_s *, irc_message_s *, char *, size_t *);
 
 __attribute__((constructor))
 static void register_handlers1()
@@ -26,6 +27,7 @@ static void register_handlers1()
     handlers1[USER]    = Handler_User;
     handlers1[PING]    = Handler_Ping;
     handlers1[PONG]    = Handler_Pong;
+    handlers1[MOTD]    = Handler_Motd;
 }
 
 
@@ -116,4 +118,16 @@ static bool Handler_Pong    (client_s * client, server_s * server, irc_message_s
     return 0;
 }
 
+static bool Handler_Motd    (client_s * client, server_s *server, irc_message_s *message, char *response, size_t *len)
+{
+    if (!server->motd) {
+        *len = Reply_ErrNoMotd(client, response);
+        return -1;
+    }
+
+
+
+
+    return 0;
+}
 
