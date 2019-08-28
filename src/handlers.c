@@ -2,6 +2,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <irc.h>
+#include <connection.h>
 
 #include "codes.h"
 #include "handlers.h"
@@ -10,6 +11,7 @@
 #include "replies.h"
 
 static handler1_t handlers1[20];
+static handler2_t handlers2[20];
 
 static bool Handler_Unknown (client_s *, server_s *, irc_message_s *, char *, size_t *);
 //static bool Handler_NickOrUser (client_s *, server_s *, irc_message_s *, char *, size_t *);
@@ -18,6 +20,13 @@ static bool Handler_User    (client_s *, server_s *, irc_message_s *, char *, si
 static bool Handler_Ping    (client_s *, server_s *, irc_message_s *, char *, size_t *);
 static bool Handler_Pong    (client_s *, server_s *, irc_message_s *, char *, size_t *);
 static bool Handler_Motd    (client_s *, server_s *, irc_message_s *, char *, size_t *);
+
+static int Handler_Unknown1 (client_s *, server_s *, irc_message_s *, GQueue *);
+static int Handler_Nick1    (client_s *, server_s *, irc_message_s *, GQueue *);
+static int Handler_User1    (client_s *, server_s *, irc_message_s *, GQueue *);
+static int Handler_Ping1    (client_s *, server_s *, irc_message_s *, GQueue *);
+static int Handler_Pong1    (client_s *, server_s *, irc_message_s *, GQueue *);
+static int Handler_Motd1    (client_s *, server_s *, irc_message_s *, GQueue *);
 
 __attribute__((constructor))
 static void register_handlers1()
@@ -30,6 +39,17 @@ static void register_handlers1()
     handlers1[MOTD]    = Handler_Motd;
 }
 
+__attribute__((constructor))
+static void Handler_Register()
+{
+    handlers2[UNKNOWN] = Handler_Unknown1;
+    handlers2[NICK]    = Handler_Nick1;
+    handlers2[USER]    = Handler_User1;
+    handlers2[PING]    = Handler_Ping1;
+    handlers2[PONG]    = Handler_Pong1;
+    handlers2[MOTD]    = Handler_Motd1;
+}
+
 
 int handle_message1(client_s *client, server_s *server, irc_message_s *message, char *response, size_t *len)
 {
@@ -40,6 +60,20 @@ static bool Handler_Unknown (client_s *client, server_s *server, irc_message_s *
 {
     circlog(L_TRACE, "Handling UNKNOWN message.");
     *len = Reply_ErrUnknownCommand(client, message->command, response);
+    return 0;
+}
+
+static int Handler_Unknown1 (client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
+{
+    struct response_s *response;
+
+    circlog(L_TRACE, "Handling UNKNOWN message.");
+
+    response = malloc(sizeof(struct response_s));
+    response->len = Reply_ErrUnknownCommand(client, message->command, response->response);
+
+    g_queue_push_tail(responses, response);
+
     return 0;
 }
 

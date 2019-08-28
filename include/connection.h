@@ -14,6 +14,11 @@
 #define CONN_RESULT_NORMAL 0
 #define CONN_RESULT_CLOSE 1
 
+typedef struct response_s {
+    char    response[IRC_MSG_SIZE];
+    size_t  len;
+} response_s;
+
 /*
  * Represents a connection between the IRC server and a client.
  */
