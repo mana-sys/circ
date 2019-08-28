@@ -10,6 +10,6 @@
  * @param path
  * @return
  */
-char * Motd_Get(const char *path);
+char * Motd_Get(const char *path, size_t *len);
 
 #endif //CIRC_MOTD_H

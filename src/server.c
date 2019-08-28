@@ -50,7 +50,7 @@ void start_server(const struct config_s conf[static 1])
     char hostname[IRC_HOSTNAME_MAX + 1];
 
     /* Get message of the day */
-    motd = Motd_Get("motd.txt");
+    motd = Motd_Get("motd.txt", NULL);
 
     /* Initialize global data structures */
     g_nicknames = g_hash_table_new_full((GHashFunc) g_str_hash, (GEqualFunc) g_str_equal,

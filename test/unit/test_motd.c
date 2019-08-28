@@ -26,7 +26,7 @@ static void test_read_motd()
     fputs(MESSAGE, f);
     fclose(f);
 
-    message = Motd_Get(tmppath);
+    message = Motd_Get(tmppath, NULL);
 
     TEST_ASSERT_EQUAL_STRING(MESSAGE, message);
 

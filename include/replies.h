@@ -21,7 +21,7 @@
 #include "client.h"
 
 int Reply_RplWelcome           (client_s *, char *);
-int Reply_RplMotdStart         (client_s *, char *);
+int Reply_RplMotdStart         (client_s *, const char *, char *);
 int Reply_RplMotd              (client_s *, const char *, char *);
 int Reply_RplEndOfMotd         (client_s *, char *);
 int Reply_ErrNoSuchNick        (client_s *, const char *, char *);

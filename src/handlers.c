@@ -10,6 +10,8 @@
 #include "irc.h"
 #include "replies.h"
 
+#define MOTD_FRAGMENT_MAX 80
+
 static handler1_t handlers1[20];
 static handler2_t handlers2[20];
 
@@ -19,6 +21,7 @@ static int Handler_User    (client_s *, server_s *, irc_message_s *, GQueue *);
 static int Handler_Ping    (client_s *, server_s *, irc_message_s *, GQueue *);
 static int Handler_Pong    (client_s *, server_s *, irc_message_s *, GQueue *);
 static int Handler_Motd    (client_s *, server_s *, irc_message_s *, GQueue *);
+
 
 __attribute__((constructor))
 static void Handler_Register()
@@ -172,12 +175,51 @@ static int Handler_Pong(client_s * client, server_s * server, irc_message_s * me
 
 static int Handler_Motd(client_s * client, server_s *server, irc_message_s *message, GQueue *responses)
 {
+    size_t len, numParts, j;
     response_s *response;
+    const char *motd;
+    char part[MOTD_FRAGMENT_MAX + 1];
 
-//    if (!server->motd) {
-//        response->len = Reply_ErrNoMotd(client, response);
-//        return -1;
-//    }
+    if (!server->motd) {
+
+        circlog(L_DEBUG, "No motd.txt found, sending ERR_NOMOTD");
+
+        response = calloc(1, sizeof(response_s));
+        response->len = Reply_ErrNoMotd(client, response->response);
+        g_queue_push_tail(responses, response);
+
+        return -1;
+    }
+
+    motd = server->motd;
+    len = strlen(motd);
+
+    numParts = (len / MOTD_FRAGMENT_MAX) + ((len % MOTD_FRAGMENT_MAX) ? 1 : 0);
+
+    response = calloc(1, sizeof(response_s));
+    response->len = Reply_RplMotdStart(client, server->hostname, response->response);
+    g_queue_push_tail(responses, response);
+
+    for (j = 0; j < numParts; j++) {
+        strncpy(part, motd, MOTD_FRAGMENT_MAX);
+
+        if (j < numParts - 1)
+            part[MOTD_FRAGMENT_MAX] = 0;
+        else
+            part[len % MOTD_FRAGMENT_MAX] = 0;
+
+        response = calloc(1, sizeof(response_s));
+        response->len = Reply_RplMotd(client, part, response->response);
+        g_queue_push_tail(responses, response);
+
+        motd += MOTD_FRAGMENT_MAX;
+    }
+
+    response = calloc(1, sizeof(response_s));
+    response->len = Reply_RplEndOfMotd(client, response->response);
+    g_queue_push_tail(responses, response);
+
+
 
     return 0;
 }

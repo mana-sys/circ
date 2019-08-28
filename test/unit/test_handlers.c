@@ -5,6 +5,13 @@
 #include "handlers.h"
 #include "log.h"
 
+#define STOP_MARKER 513
+#define MOTD_LONG "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam " \
+    "imperdiet elementum leo, nec cursus diam."
+
+#define MOTD_LONG_FIRST_PART "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam imperdiet elemen"
+#define MOTD_LONG_SECOND_PART "tum leo, nec cursus diam."
+
 /*
  * Test data to be passed to handlers.
  */
@@ -52,20 +59,21 @@ static void expect_responses_internal(response_s * expected)
 {
     response_s *queued;
 
-    while (expected->len) {
+    while (expected->len != STOP_MARKER) {
         queued = g_queue_pop_head(responses);
 
         TEST_ASSERT_NOT_NULL_MESSAGE(queued, "Queue has less messages than expected")
         TEST_ASSERT_EQUAL_STRING(expected->response, queued->response);
 
+        free(queued);
         expected++;
     }
 
 }
 
-#define expect_responses(...) {                                 \
-    response_s *expected = (response_s[]) {__VA_ARGS__, {}};    \
-    expect_responses_internal(expected);                        \
+#define expect_responses(...) {                                                 \
+    response_s *expected = (response_s[]) {__VA_ARGS__, {.len = STOP_MARKER}};  \
+    expect_responses_internal(expected);                                        \
 }
 
 #define expect_responses_none() TEST_ASSERT_TRUE_MESSAGE(g_queue_is_empty(responses), "Queue is not empty")
@@ -291,6 +299,47 @@ static void TestHandlers_Pong()
     expect_responses_none();
 }
 
+static void TestHandlers_Motd()
+{
+    with_server(.motd = "MOTD is here", .hostname = "hostname");
+    with_client(.nickname = "nick", .receivedNick = TRUE);
+    with_message(.type = MOTD);
+
+    TestHandlers_Run();
+
+    expect_responses({.response = "375 nick :- hostname Message of the day - \r\n", .len = 1},
+                     {.response = "372 nick :- MOTD is here\r\n", .len = 1},
+                     {.response = "376 nick :End of MOTD command\r\n", .len = 1});
+}
+
+
+static void TestHandlers_Motd_LongMessage()
+{
+    with_server(.motd = MOTD_LONG, .hostname = "hostname");
+    with_client(.nickname = "nick", .receivedNick = TRUE);
+    with_message(.type = MOTD);
+
+    TestHandlers_Run();
+
+
+    expect_responses({.response = "375 nick :- hostname Message of the day - \r\n", .len = 1},
+                     {.response = "372 nick :- " MOTD_LONG_FIRST_PART "\r\n", .len = 1},
+                     {.response = "372 nick :- " MOTD_LONG_SECOND_PART "\r\n", .len = 1},
+                     {.response = "376 nick :End of MOTD command\r\n", .len = 1});
+}
+
+
+static void TestHandlers_Motd_NoMotd()
+{
+    with_server(.motd = NULL);
+    with_client(.nickname = "nick", .receivedNick = TRUE);
+    with_message(.type = MOTD);
+
+    TestHandlers_Run();
+
+    expect_responses({.response = "422 nick :MOTD File is missing\r\n", .len = 1});
+}
+
 int main()
 {
     UnityBegin("test_handlers.c");
@@ -311,6 +360,10 @@ int main()
     RUN_TEST(TestHandlers_Ping);
 
     RUN_TEST(TestHandlers_Pong);
+
+    RUN_TEST(TestHandlers_Motd);
+    RUN_TEST(TestHandlers_Motd_LongMessage);
+    RUN_TEST(TestHandlers_Motd_NoMotd);
 
     return UnityEnd();
 }

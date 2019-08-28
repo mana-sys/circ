@@ -4,7 +4,7 @@
 
 #include "motd.h"
 
-char * Motd_Get(const char *path)
+char * Motd_Get(const char *path, size_t *len)
 {
     int result;
     long offset;
@@ -42,5 +42,7 @@ char * Motd_Get(const char *path)
 
     fclose(f);
 
+    if (len != NULL)
+        *len = offset;
     return message;
 }

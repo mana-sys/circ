@@ -12,6 +12,8 @@ static int parse_message_user    (struct irc_message *message, char *saveptr);
 static int parse_message_ping    (struct irc_message *message, char *saveptr);
 static int parse_message_pong    (struct irc_message *message, char *saveptr);
 static int parse_message_privmsg (struct irc_message *message, char *saveptr);
+static int parse_message_motd    (struct irc_message *message, char *saveptr);
+
 
 int parse_message(char *buf, struct irc_message *message)
 {
@@ -29,6 +31,8 @@ int parse_message(char *buf, struct irc_message *message)
             return parse_message_ping(message, saveptr);
         } else if (strcmp(tok, "PONG") == 0) {
             return parse_message_pong(message, saveptr);
+        } else if (strcmp(tok, "MOTD") == 0) {
+            return parse_message_motd(message, saveptr);
         } else {
             message->type = UNKNOWN;
             return 0;
@@ -125,15 +129,21 @@ static int parse_message_user(struct irc_message *message, char *saveptr)
 
 }
 
-static int parse_message_ping    (struct irc_message *message, char *saveptr)
+static int parse_message_ping(struct irc_message *message, char *saveptr)
 {
     message->type = PING;
     return 0;
 }
 
-static int parse_message_pong (struct irc_message *message, char *saveptr)
+static int parse_message_pong(struct irc_message *message, char *saveptr)
 {
     message->type = PONG;
+    return 0;
+}
+
+static int parse_message_motd(struct irc_message *message, char *saveptr)
+{
+    message->type = MOTD;
     return 0;
 }
 

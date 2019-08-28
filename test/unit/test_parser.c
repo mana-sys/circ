@@ -135,6 +135,15 @@ static void TestParser_Pong()
     expect_message_type(PONG);
 }
 
+static void TestParser_Motd()
+{
+    char message[] = "MOTD\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(MOTD);
+}
+
 int main() {
     UnityBegin("test_parser.c");
 
@@ -154,8 +163,7 @@ int main() {
 
     RUN_TEST(TestParser_Pong);
 
-//    RUN_TEST(test_parse_msg_nick_no_nickname_given);
-//    RUN_TEST(test_parse_msg_nick_erroneus_nickname);
-//    RUN_TEST(test_parse_msg_user);
+    RUN_TEST(TestParser_Motd);
+
     return UnityEnd();
 }

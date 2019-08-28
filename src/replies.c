@@ -15,9 +15,14 @@ int Reply_RplWelcome           (client_s * client, char *response)
             client->nickname, client->username, client->hostname);
 }
 
-int Reply_RplMotdStart         (client_s * client, char *response)
+int Reply_RplMotdStart(client_s * client, const char *server, char *response)
 {
-    return sprintf(response, FMT_RPL_MOTDSTART, RPL_MOTDSTART, NICK_OR_STAR(client), "servername");
+    return sprintf(response, FMT_RPL_MOTDSTART, RPL_MOTDSTART, NICK_OR_STAR(client), server);
+}
+
+int Reply_RplMotd(client_s * client, const char *part, char *response)
+{
+    return sprintf(response, FMT_RPL_MOTD, RPL_MOTD, NICK_OR_STAR(client), part);
 }
 
 int Reply_RplEndOfMotd (client_s *client, char *response)
