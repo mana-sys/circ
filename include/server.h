@@ -2,7 +2,6 @@
 #define SERVER_H
 
 #include "config.h"
-#include "context.h"
 
 struct context_client **clients;
 

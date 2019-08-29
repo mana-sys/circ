@@ -22,13 +22,8 @@ pkg_check_modules(GLib REQUIRED glib-2.0)
 
 include_directories(${GLib_INCLUDE_DIRS})
 
-add_executable(circ_sv ${CIRC_SRC})
-add_executable(circ_cl circ_cl.c)
 add_executable(circ ${CIRC_SRC})
-add_executable(ghashtable_test ghashtable_test.c)
 add_definitions (${GLib_CFLAGS})
 
 target_link_libraries(circ ${GLib_LIBRARIES} Threads::Threads m)
-target_link_libraries (ghashtable_test ${GLib_LIBRARIES})
 
-target_link_libraries(circ_sv ${GLib_LIBRARIES} Threads::Threads m)

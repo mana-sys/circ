@@ -10,7 +10,6 @@
 
 #include "common.h"
 #include "connection.h"
-#include "context.h"
 #include "limits.h"
 #include "log.h"
 #include "server.h"
