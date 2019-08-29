@@ -23,6 +23,11 @@ typedef struct nick_id_s {
     char nick[IRC_NICK_SIZE];
 } nick_id_s;
 
+typedef struct clients_entry_s {
+    int clientId;
+    client_s *client;
+} clients_entry_s;
+
 /*
  * Adds the nicknames in nick_list to the nicknames hash.
  */
@@ -63,6 +68,16 @@ static void expect_nicknames_contains_internal(nick_id_s pair)
     TEST_ASSERT_EQUAL_INT(pair.id, result);
 
 }
+
+static void expect_clients_contains_internal(clients_entry_s pair)
+{
+    client_s *result;
+
+    result = g_hash_table_lookup(server.clients, GINT_TO_POINTER(pair.clientId));
+    TEST_ASSERT_EQUAL_PTR(pair.client, result);
+}
+
+#define expect_clients_contains(...) expect_clients_contains_internal((clients_entry_s){__VA_ARGS__})
 
 static void expect_nicknames_contains_not(char *nick)
 {
@@ -171,6 +186,51 @@ static void test_nick_handler_successful_registration()
 
 }
 
+static void TestHandlers_User()
+{
+    with_client(.clientId = 1);
+    with_server(.nicks = nicknames, .clients = clients);
+    with_message(.type = USER, .message.user.fullname = "fullname", .message.user.username = "username");
+
+    run_handle_message();
+
+    TEST_ASSERT_EQUAL_STRING("fullname", client.fullname);
+    TEST_ASSERT_EQUAL_STRING("username", client.username);
+}
+
+static void TestHandlers_UserNeedMoreParams()
+{
+    with_client(.clientId = 1);
+    with_message(.type = USER, .parse_err = ERR_NEEDMOREPARAMS);
+
+    run_handle_message();
+
+    expect_response("461 * USER :Not enough parameters\r\n");
+}
+
+static void TestHandlers_UserAlreadyRegistered()
+{
+    with_client(.clientId = 1, .registered = true, .receivedNick = true, .receivedUser = true,
+            .nickname = "nick", .username = "username", .fullname = "fullname");
+    with_message(.type = USER, .message.user.username = "username", .message.user.fullname = "fullname");
+
+    run_handle_message();
+
+    expect_response("462 nick :You may not reregister\r\n");
+}
+
+static void TestHandlers_UserSuccessfulRegistration()
+{
+    with_client(.clientId = 1, .receivedNick = true, .nickname = "nick", .hostname = "localhost");
+    with_server(.clients = clients);
+    with_message(.type = USER, .message.user.username = "username", .message.user.fullname = "fullname");
+
+    run_handle_message();
+
+    expect_clients_contains(.client = &client, .clientId = 1);
+    expect_response("001 nick :Welcome to the Internet Relay Network nick!username@localhost\r\n");
+}
+
 static void test_unknown_handler()
 {
     with_client(.clientId = 1);
@@ -191,6 +251,11 @@ int main()
     RUN_TEST(test_nick_handler_new_nick);
     RUN_TEST(test_nick_handler_nick_taken);
     RUN_TEST(test_nick_handler_successful_registration);
+
+    RUN_TEST(TestHandlers_User);
+    RUN_TEST(TestHandlers_UserNeedMoreParams);
+    RUN_TEST(TestHandlers_UserAlreadyRegistered);
+    RUN_TEST(TestHandlers_UserSuccessfulRegistration);
 
     RUN_TEST(test_unknown_handler);
 
