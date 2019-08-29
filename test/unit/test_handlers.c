@@ -231,6 +231,25 @@ static void TestHandlers_UserSuccessfulRegistration()
     expect_response("001 nick :Welcome to the Internet Relay Network nick!username@localhost\r\n");
 }
 
+static void TestHandlers_Ping()
+{
+    with_message(.type = PING);
+    with_server(.hostname = "localhost");
+    run_handle_message();
+
+    expect_response("PONG localhost\r\n");
+}
+
+static void TestHandlers_Pong()
+{
+    with_message(.type = PONG);
+
+    run_handle_message();
+
+    expect_response("");
+    expect_response_len(0);
+}
+
 static void test_unknown_handler()
 {
     with_client(.clientId = 1);
@@ -256,6 +275,10 @@ int main()
     RUN_TEST(TestHandlers_UserNeedMoreParams);
     RUN_TEST(TestHandlers_UserAlreadyRegistered);
     RUN_TEST(TestHandlers_UserSuccessfulRegistration);
+
+    RUN_TEST(TestHandlers_Ping);
+
+    RUN_TEST(TestHandlers_Pong);
 
     RUN_TEST(test_unknown_handler);
 
