@@ -20,6 +20,15 @@ void tearDown()
 {
 }
 
+static void TestParser_Unknown()
+{
+    char message[] = "UNKNOWNMESSAGE param1\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(UNKNOWN);
+}
+
 
 static void test_parse_msg_nick()
 {
@@ -108,8 +117,28 @@ static void TestParser_UserNeedMoreParams4()
     expect_message_parse_error(ERR_NEEDMOREPARAMS);
 }
 
+static void TestParser_Ping()
+{
+    char message[] = "PING localhost\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(PING);
+}
+
+static void TestParser_Pong()
+{
+    char message[] = "PONG localhost\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(PONG);
+}
+
 int main() {
     UnityBegin("test_parser.c");
+
+    RUN_TEST(TestParser_Unknown);
 
     RUN_TEST(test_parse_msg_nick);
     RUN_TEST(TestParser_NickNoNicknameGiven);
@@ -120,6 +149,10 @@ int main() {
     RUN_TEST(TestParser_UserNeedMoreParams2);
     RUN_TEST(TestParser_UserNeedMoreParams3);
     RUN_TEST(TestParser_UserNeedMoreParams4);
+
+    RUN_TEST(TestParser_Ping);
+
+    RUN_TEST(TestParser_Pong);
 
 //    RUN_TEST(test_parse_msg_nick_no_nickname_given);
 //    RUN_TEST(test_parse_msg_nick_erroneus_nickname);
