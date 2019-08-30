@@ -113,7 +113,7 @@ static int parse_message_user(struct irc_message *message, char *saveptr)
     }
 
     // Parse the <realname> parameter.
-    if ((msgtok_r(NULL, &toklen, &saveptr)) == NULL) {
+    if ((tok = msgtok_r(NULL, &toklen, &saveptr)) == NULL) {
         message->parse_err = ERR_NEEDMOREPARAMS;
         return ERR_NEEDMOREPARAMS;
     }
