@@ -89,7 +89,7 @@ int Conn_HandleRead (conn_s *conn)
             circlog(L_DEBUG, "Sending response message.");
 
             response = g_queue_pop_head(conn->responses);
-            write(conn->client.fd, response->response, response.len);
+            write(conn->client.fd, response->response, response->len);
 
             free(response);
         }

@@ -190,9 +190,5 @@ char * conn_read_message (conn_s *conn)
         } else {
             return NULL;
         }
-
-        if (conn->discardNext) {
-
-        }
     }
 }

@@ -178,7 +178,7 @@ void start_server(const struct config_s conf[static 1])
                  * and handle the resultant messages.
                  */
                 circlog(L_DEBUG, "Handling connection for client =%d", ((conn_s *) events[j].data.ptr)->client.clientId);
-                readResult = handle_read((conn_s *) events[j].data.ptr);
+                readResult = Conn_HandleRead(events[j].data.ptr);
 
                 if (readResult == CONN_RESULT_ERROR) {
                     circlog(L_WARNING, "Connection encountered error.");

@@ -14,10 +14,6 @@
 #define CONN_RESULT_NORMAL 0
 #define CONN_RESULT_CLOSE 1
 
-typedef struct response_s {
-    char    response[IRC_MSG_SIZE];
-    size_t  len;
-} response_s;
 
 /*
  * Represents a connection between the IRC server and a client.
@@ -42,5 +38,16 @@ typedef struct conn_s {
  * CONN_RESULT_CLOSE on client closed connection.
  */
 int handle_read(conn_s *conn);
+
+
+/**
+ * Do a non-blocking read on the connection's file descriptor. After doing the read,
+ * parse and handle the messages in the store buffer.
+ * @param conn The connection to perform the read on.
+ * @return CONN_RESULT_ERROR on error, CONN_RESULT_NORMAL on normal read,
+ * CONN_RESULT_CLOSE on client closed connection.
+ */
+int Conn_HandleRead(conn_s *);
+
 
 #endif //CIRC_CONNECTION_H

@@ -1,3 +1,4 @@
+#include <connection.h>
 #include "unity.h"
 
 #include "codes.h"
@@ -14,6 +15,7 @@ static GHashTable *  nicknames;
 static GHashTable *  clients;
 char                 response[IRC_MSG_SIZE];
 size_t               len;
+GQueue *             responses;
 
 /*
  * Structure to hold nickname-client ID pairs.
@@ -27,6 +29,47 @@ typedef struct clients_entry_s {
     int clientId;
     client_s *client;
 } clients_entry_s;
+
+
+void setUp()
+{
+    nicknames = g_hash_table_new((GHashFunc) g_str_hash, (GEqualFunc) g_str_equal);
+    clients   = g_hash_table_new(g_direct_hash, g_direct_equal);
+    responses = g_queue_new();
+    memset(response, 0, IRC_MSG_SIZE);
+    len = 0;
+}
+
+void tearDown()
+{
+    g_hash_table_destroy(nicknames);
+    g_hash_table_destroy(clients);
+    g_queue_free(responses);
+}
+
+
+static void expect_responses_internal(response_s * expected)
+{
+    response_s *queued;
+
+    while (expected->len) {
+        queued = g_queue_pop_head(responses);
+
+        TEST_ASSERT_NOT_NULL_MESSAGE(queued, "Queue has less messages than expected")
+        TEST_ASSERT_EQUAL_STRING(expected->response, queued->response);
+
+        expected++;
+    }
+
+}
+
+#define expect_responses(...) {                                 \
+    response_s *expected = (response_s[]) {__VA_ARGS__, {}};    \
+    expect_responses_internal(expected);                        \
+}
+
+#define expect_responses_none() TEST_ASSERT_TRUE_MESSAGE(g_queue_is_empty(responses), "Queue is not empty")
+
 
 /*
  * Adds the nicknames in nick_list to the nicknames hash.
@@ -100,90 +143,87 @@ static void expect_nicknames_contains_not(char *nick)
 #define expect_response(expected) TEST_ASSERT_EQUAL_STRING(expected, response)
 #define expect_response_len(expected) TEST_ASSERT_EQUAL_UINT(expected, len)
 
-static void run_handle_message()
+static void TestHandlers_Run()
 {
-    handle_message1(&client, &server, &message, response, &len);
+    Handler_HandleMessage(&client, &server, &message, responses);
 }
 
-void setUp()
+
+static void TestHandlers_Unknown()
 {
-    nicknames = g_hash_table_new((GHashFunc) g_str_hash, (GEqualFunc) g_str_equal);
-    clients   = g_hash_table_new(g_direct_hash, g_direct_equal);
-    memset(response, 0, IRC_MSG_SIZE);
-    len = 0;
+    with_client(.clientId = 1);
+    with_message(.type = UNKNOWN, .command = "UNKNOWN");
+
+    TestHandlers_Run();
+
+    expect_responses({.response = "421 * UNKNOWN :Unknown command\r\n", .len = 1});
 }
 
-void tearDown()
-{
-    g_hash_table_destroy(nicknames);
-    g_hash_table_destroy(clients);
-}
-
-static void test_nick_handler()
+static void TestHandlers_Nick()
 {
     with_client(.clientId = 1);
     with_server(.nicks = nicknames);
     with_message(.type = NICK, .message.nick = {.nick = "nick"});
 
-    run_handle_message();
+    TestHandlers_Run();
 
     expect_nicknames_contains(.id = 1, .nick = "nick");
-    expect_response("");
-    expect_response_len(0);
-
+    expect_responses_none();
 }
 
-static void test_nick_handler_new_nick()
+
+static void TestHandlers_NickNewNick()
 {
     with_client(.clientId = 1, .nickname = "nickOld", .receivedNick = true);
     with_server(.nicks = nicknames);
     with_message(.type = NICK, .message.nick = {.nick = "nickNew"});
 
-    run_handle_message();
+    TestHandlers_Run();
 
     expect_nicknames_contains(.id = 1, .nick = "nickNew");
     expect_nicknames_contains_not("nickOld");
-    expect_response("");
-    expect_response_len(0);
+    expect_responses_none();
 }
 
-static void test_nick_handler_nick_taken()
+
+static void TestHandlers_Nick_NicknameInUse()
 {
     with_client(.clientId = 2);
     with_nicks({.id = 1, .nick = "nick"});
     with_server(.nicks = nicknames);
     with_message(.type = NICK, .message.nick = {.nick = "nick"});
 
-    run_handle_message();
+    TestHandlers_Run();
 
     expect_nicknames_contains(.id = 1, .nick = "nick");
-    expect_response("433 * nick :Nickname is already in use\r\n");
+    expect_responses({.response = "433 * nick :Nickname is already in use\r\n", .len = 1})
 }
 
-static void test_nick_handler_no_nick_given()
+
+static void TestHandlers_Nick_NoNicknameGiven()
 {
     with_client(.clientId = 1);
     with_server(.nicks = nicknames);
     with_message(.type = NICK, .parse_err = ERR_NONICKNAMEGIVEN);
 
-    run_handle_message();
+    TestHandlers_Run();
 
-    expect_response("431 * :No nickname given\r\n");
+    expect_responses({.response = "431 * :No nickname given\r\n", .len = 1})
 }
 
-static void test_nick_handler_successful_registration()
+
+static void TestHandlers_Nick_SuccessfulRegistration()
 {
     with_client(.clientId = 1, .username = "john", .fullname = "John Doe", .receivedUser = true,
             .hostname = "localhost");
     with_server(.nicks = nicknames, .clients = clients);
     with_message(.type = NICK, .message.nick = {.nick = "nick"});
 
-    run_handle_message();
+    TestHandlers_Run();
 
     expect_nicknames_contains(.id = 1, .nick = "nick");
     TEST_ASSERT_TRUE(client.registered);
-    expect_response("001 nick :Welcome to the Internet Relay Network nick!john@localhost\r\n");
-
+    expect_responses({.response = "001 nick :Welcome to the Internet Relay Network nick!john@localhost\r\n", .len = 1})
 }
 
 static void TestHandlers_User()
@@ -192,10 +232,11 @@ static void TestHandlers_User()
     with_server(.nicks = nicknames, .clients = clients);
     with_message(.type = USER, .message.user.fullname = "fullname", .message.user.username = "username");
 
-    run_handle_message();
+    TestHandlers_Run();
 
     TEST_ASSERT_EQUAL_STRING("fullname", client.fullname);
     TEST_ASSERT_EQUAL_STRING("username", client.username);
+    expect_responses_none();
 }
 
 static void TestHandlers_UserNeedMoreParams()
@@ -203,9 +244,9 @@ static void TestHandlers_UserNeedMoreParams()
     with_client(.clientId = 1);
     with_message(.type = USER, .parse_err = ERR_NEEDMOREPARAMS);
 
-    run_handle_message();
+    TestHandlers_Run();
 
-    expect_response("461 * USER :Not enough parameters\r\n");
+    expect_responses({.response = "461 * USER :Not enough parameters\r\n", .len = 1})
 }
 
 static void TestHandlers_UserAlreadyRegistered()
@@ -214,9 +255,9 @@ static void TestHandlers_UserAlreadyRegistered()
             .nickname = "nick", .username = "username", .fullname = "fullname");
     with_message(.type = USER, .message.user.username = "username", .message.user.fullname = "fullname");
 
-    run_handle_message();
+    TestHandlers_Run();
 
-    expect_response("462 nick :You may not reregister\r\n");
+    expect_responses({.response = "462 nick :You may not reregister\r\n", .len = 1})
 }
 
 static void TestHandlers_UserSuccessfulRegistration()
@@ -225,51 +266,42 @@ static void TestHandlers_UserSuccessfulRegistration()
     with_server(.clients = clients);
     with_message(.type = USER, .message.user.username = "username", .message.user.fullname = "fullname");
 
-    run_handle_message();
+    TestHandlers_Run();
 
     expect_clients_contains(.client = &client, .clientId = 1);
-    expect_response("001 nick :Welcome to the Internet Relay Network nick!username@localhost\r\n");
+    expect_responses({.response = "001 nick :Welcome to the Internet Relay Network nick!username@localhost\r\n", .len = 1})
 }
 
 static void TestHandlers_Ping()
 {
     with_message(.type = PING);
     with_server(.hostname = "localhost");
-    run_handle_message();
 
-    expect_response("PONG localhost\r\n");
+    TestHandlers_Run();
+
+    expect_responses({.response = "PONG localhost\r\n", .len = 1})
 }
 
 static void TestHandlers_Pong()
 {
     with_message(.type = PONG);
 
-    run_handle_message();
+    TestHandlers_Run();
 
-    expect_response("");
-    expect_response_len(0);
-}
-
-static void test_unknown_handler()
-{
-    with_client(.clientId = 1);
-    with_message(.type = UNKNOWN, .command = "UNKNOWN");
-
-    run_handle_message();
-
-    expect_response("421 * UNKNOWN :Unknown command\r\n");
-
+    expect_responses_none();
 }
 
 int main()
 {
     UnityBegin("test_handlers.c");
 
-    RUN_TEST(test_nick_handler);
-    RUN_TEST(test_nick_handler_no_nick_given);
-    RUN_TEST(test_nick_handler_new_nick);
-    RUN_TEST(test_nick_handler_nick_taken);
-    RUN_TEST(test_nick_handler_successful_registration);
+    RUN_TEST(TestHandlers_Unknown);
+
+    RUN_TEST(TestHandlers_Nick);
+    RUN_TEST(TestHandlers_NickNewNick);
+    RUN_TEST(TestHandlers_Nick_NicknameInUse);
+    RUN_TEST(TestHandlers_Nick_NoNicknameGiven);
+    RUN_TEST(TestHandlers_Nick_SuccessfulRegistration);
 
     RUN_TEST(TestHandlers_User);
     RUN_TEST(TestHandlers_UserNeedMoreParams);
@@ -279,8 +311,6 @@ int main()
     RUN_TEST(TestHandlers_Ping);
 
     RUN_TEST(TestHandlers_Pong);
-
-    RUN_TEST(test_unknown_handler);
 
     return UnityEnd();
 }

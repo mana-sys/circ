@@ -8,6 +8,7 @@ set(CIRC_SRC
         handlers.c
         hashtable.c
         log.c
+        motd.c
         msgtok.c
         parser.c
         read_message.c

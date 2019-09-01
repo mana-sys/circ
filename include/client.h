@@ -23,6 +23,13 @@ typedef struct server_s {
     const char *motd;
 } server_s;
 
+
+typedef struct response_s {
+    char    response[IRC_MSG_SIZE];
+    size_t  len;
+} response_s;
+
+
 /**
  * Registers the specified client with the specified server.
  * @param client The client to register.
@@ -30,7 +37,8 @@ typedef struct server_s {
  * @param response Output parameter returning the generated response from registration.
  * @return 0 on success, -1 on error
  */
-void Client_TryRegister (client_s *client, server_s *server, char *response, size_t *len);
+void Client_TryRegister (client_s *client, server_s *server, response_s **response);
+
 
 /**
  * Tries to change the given client's nickname as registered by the given server.
@@ -42,7 +50,8 @@ void Client_TryRegister (client_s *client, server_s *server, char *response, siz
  * @param response Buffer to hold any response.
  * @return 0 on success, -1 on error
  */
-int Client_TryChangeNick (client_s *client, server_s *server, const char *nick, char *response, size_t *len);
+int Client_TryChangeNick (client_s *client, server_s *server, const char *nick, response_s **response);
+
 
 /**
  * Sends the specified message to the specified client.
