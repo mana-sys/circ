@@ -280,6 +280,28 @@ static void TestHandlers_UserSuccessfulRegistration()
     expect_responses({.response = "001 nick :Welcome to the Internet Relay Network nick!username@localhost\r\n", .len = 1})
 }
 
+static void TestHandlers_PrivmsgNoRecipient()
+{
+    with_client(.clientId = 1, .receivedNick = true, .nickname = "nick", .hostname = "localhost");
+    with_server(.clients = clients);
+    with_message(.type = PRIVMSG, .parse_err = ERR_NORECIPIENT);
+
+    TestHandlers_Run();
+
+    expect_responses({.response = "411 nick :No recipient given (PRIVMSG)\r\n", .len = 1});
+}
+
+static void TestHandlers_PrivmsgNoTextToSend()
+{
+    with_client(.clientId = 1, .receivedNick = true, .nickname = "nick", .hostname = "localhost");
+    with_server(.clients = clients);
+    with_message(.type = PRIVMSG, .parse_err = ERR_NOTEXTTOSEND);
+
+    TestHandlers_Run();
+
+    expect_responses({.response = "412 nick :No text to send\r\n", .len = 1});
+}
+
 static void TestHandlers_Ping()
 {
     with_message(.type = PING);
@@ -364,6 +386,9 @@ int main()
     RUN_TEST(TestHandlers_Motd);
     RUN_TEST(TestHandlers_Motd_LongMessage);
     RUN_TEST(TestHandlers_Motd_NoMotd);
+
+    RUN_TEST(TestHandlers_PrivmsgNoRecipient);
+    RUN_TEST(TestHandlers_PrivmsgNoTextToSend);
 
     return UnityEnd();
 }

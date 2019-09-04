@@ -69,7 +69,7 @@ int Reply_ErrNoRecipient(client_s *client, const char *command, char *response)
 
 int Reply_ErrNoTextToSend(client_s * client, char *response)
 {
-    return sprintf(response, FMT_ERR_NOTEXTTOSEND, ERR_NORECIPIENT, NICK_OR_STAR(client));
+    return sprintf(response, FMT_ERR_NOTEXTTOSEND, ERR_NOTEXTTOSEND, NICK_OR_STAR(client));
 }
 
 
