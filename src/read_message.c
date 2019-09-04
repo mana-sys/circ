@@ -40,6 +40,7 @@ ssize_t read_message(int fd, char *msg, char *buf, ssize_t *storeTotalRead, bool
     bool gotCRLF = false;
     int res;
 
+
     for (;;) {
 
         /*
@@ -95,6 +96,8 @@ char * conn_read_message (conn_s *conn)
     char *crlf;
     size_t messageLen, remainingLen;
     ssize_t numRead;
+
+    memset(conn->message, 0, IRC_MSG_SIZE);
 
     /*
      * Loop until we retrieve a message, or until it is determined there is no

@@ -3,7 +3,8 @@
 
 // Specifies the type of the IRC message from the client.
 enum irc_message_type {
-    UNKNOWN = 0,
+    INVALID = -1,
+    UNKNOWN,
     USER,
     NICK,
     PRIVMSG,

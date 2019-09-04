@@ -60,6 +60,20 @@ int Reply_ErrNeedMoreParams    (client_s *client, const char *failedCommand, cha
                    failedCommand, STR_ERR_NEEDMOREPARAMS);
 }
 
+
+int Reply_ErrNoRecipient(client_s *client, const char *command, char *response)
+{
+    return sprintf(response, FMT_ERR_NORECIPIENT, ERR_NORECIPIENT, NICK_OR_STAR(client), command);
+}
+
+
+int Reply_ErrNoTextToSend(client_s * client, char *response)
+{
+    return sprintf(response, FMT_ERR_NOTEXTTOSEND, ERR_NORECIPIENT, NICK_OR_STAR(client));
+}
+
+
+
 int Reply_ErrNotRegistered     (client_s *client, char *response)
 {
     return sprintf(response, "%d %s %s", 451, client->receivedNick ? client->nickname : "*", STR_ERR_NOTREGISTERED);
@@ -81,4 +95,10 @@ int Reply_ErrUnknownCommand    (client_s *client, const char *unknownCommand, ch
 int Reply_Pong (const char *hostname, char *response)
 {
     return sprintf(response, "PONG %s\r\n", hostname);
+}
+
+int Message_Privmsg(client_s *client, const char *msgtarget, const char *contents, char *response)
+{
+    return sprintf(response, FMT_MSG_PRIVMSG, client->nickname, client->username, client->hostname,
+            msgtarget, contents);
 }

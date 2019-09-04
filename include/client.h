@@ -5,16 +5,9 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "connection.h"
 #include "irc_constants.h"
 
-typedef struct client_s {
-    bool registered, receivedNick, receivedUser;
-    int fd, clientId;
-    char nickname[IRC_NICK_SIZE + 1];
-    char username[IRC_MSG_SIZE];
-    char hostname[IRC_HOSTNAME_MAX + 1];
-    char fullname[IRC_MSG_SIZE];
-} client_s;
 
 typedef struct server_s {
     GHashTable *nicks;      /* Map from nicks (string) to client IDs (int) */
@@ -22,6 +15,19 @@ typedef struct server_s {
     const char *hostname;   /* Pointer to the server's hostname. */
     const char *motd;
 } server_s;
+
+
+typedef struct client_s {
+    bool registered, receivedNick, receivedUser;
+    int clientId;
+    conn_s  conn;
+    server_s server;
+    char nickname[IRC_NICK_SIZE + 1];
+    char username[IRC_MSG_SIZE];
+    char hostname[IRC_HOSTNAME_MAX + 1];
+    char fullname[IRC_MSG_SIZE];
+
+} client_s;
 
 
 typedef struct response_s {
@@ -59,7 +65,14 @@ int Client_TryChangeNick (client_s *client, server_s *server, const char *nick, 
  * @param message The message to be sent.
  * @return 0 on success, -1 on error
  */
-int Client_Send(client_s *client, const char *message);
+int Client_Send(client_s *client, response_s *response);
+
+
+int Client_TryEmptyBuffer(client_s *client);
+
+
+int Client_HandleRead(client_s *);
+
 
 /**
  * Tries to send the specified message to the client identified by the

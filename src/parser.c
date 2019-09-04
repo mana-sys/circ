@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <irc.h>
 
 #include "codes.h"
 #include "msgtok.h"
@@ -33,6 +34,8 @@ int parse_message(char *buf, struct irc_message *message)
             return parse_message_pong(message, saveptr);
         } else if (strcmp(tok, "MOTD") == 0) {
             return parse_message_motd(message, saveptr);
+        } else if (strcmp(tok, "PRIVMSG") == 0) {
+            return parse_message_privmsg(message, saveptr);
         } else {
             message->type = UNKNOWN;
             return 0;
@@ -128,6 +131,35 @@ static int parse_message_user(struct irc_message *message, char *saveptr)
     return 0;
 
 }
+
+static int parse_message_privmsg(struct irc_message *message, char *saveptr)
+{
+    size_t toklen;
+    char * tok;
+
+    message->type = PRIVMSG;
+
+    // Parse the <msgtarget> parameter.
+    tok = msgtok_r(NULL, &toklen, &saveptr);
+
+    if (tok == NULL || toklen == 0) {
+        message->parse_err = ERR_NORECIPIENT;
+        return ERR_NORECIPIENT;
+    }
+
+    message->message.privmsg.msgtarget = tok;
+
+    if ((tok = msgtok_r(NULL, &toklen, &saveptr)) == NULL) {
+        message->parse_err = ERR_NOTEXTTOSEND;
+        return ERR_NOTEXTTOSEND;
+    }
+
+    message->message.privmsg.contents = tok;
+    message->parse_err = 0;
+
+    return 0;
+}
+
 
 static int parse_message_ping(struct irc_message *message, char *saveptr)
 {

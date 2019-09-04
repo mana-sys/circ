@@ -1,4 +1,5 @@
 #include <arpa/inet.h>
+#include <fcntl.h>
 #include <glib.h>
 #include <netdb.h>
 #include <pthread.h>
@@ -6,12 +7,13 @@
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <motd.h>
 
+#include "client.h"
 #include "common.h"
 #include "connection.h"
 #include "limits.h"
 #include "log.h"
+#include "motd.h"
 #include "server.h"
 
 #define BACKLOG 5
@@ -40,13 +42,13 @@ static void nicknames_hash_key_destroy_func(gpointer data)
 void start_server(const struct config_s conf[static 1])
 {
     char *motd;
-    int sfd, cfd, epfd, ready, readyFd, j, readResult, optval;
+    int sfd, cfd, epfd, ready, readyFd, j, readResult, writeResult, optval, flags;
     socklen_t len;
     struct sockaddr_in addr, claddr;
     struct epoll_event event;
     struct epoll_event events[MAXEVENTS];
-    conn_s server_conn;                     /* Dummy conn_s struct for the server to be passed to epoll. */
-    conn_s *conn;
+    client_s server_client;                 /* Dummy client_s struct for the server to be passed to epoll. */
+    client_s *client;
     char hostname[IRC_HOSTNAME_MAX + 1];
 
     /* Get message of the day */
@@ -100,11 +102,10 @@ void start_server(const struct config_s conf[static 1])
     if (epfd == -1)
         logExitErr("Fatal error: epoll_create()");
 
-    server_conn.client.fd = sfd;
+    server_client.conn.fd = sfd;
 
     event.events = EPOLLIN | EPOLLERR;
-    event.data.ptr = &server_conn;
-
+    event.data.ptr = &server_client;
 
     if (epoll_ctl(epfd, EPOLL_CTL_ADD, sfd, &event) == -1)
         logExitErr("Fatal error: epoll_ctl()");
@@ -118,30 +119,38 @@ void start_server(const struct config_s conf[static 1])
          * handle data from all current connections.
          */
         for (j = 0; j < ready; j++) {
-            readyFd = ((conn_s *) events[j].data.ptr)->client.fd;
+            readyFd = ((client_s *) events[j].data.ptr)->conn.fd;
             if (readyFd == sfd) {
                 len = sizeof(struct sockaddr_in);
                 cfd = accept(readyFd, (struct sockaddr *) &claddr, &len);
                 if (cfd == -1)
                     logExitErr("Fatal error: accept()");
 
+                flags = fcntl(cfd, F_GETFL, 0);
+                if (flags == -1)
+                    logExitErr("fcntl() F_SETFL");
+                flags |= O_NONBLOCK;
+                if (fcntl(cfd, F_SETFL, flags) == -1)
+                    logExitErr("fcntl() F_SETFL");
+
                 circlog(L_INFO, "Accepting new connection.");
 
                 /*
-                 * Allocate new connection struct to represent the new
-                 * connection.
+                 * Allocate new client_s struct to represent the client and its
+                 * corresponding connection.
                  */
-                conn = calloc(1, sizeof(conn_s));
-                conn->client.fd = cfd;
-                conn->client.clientId = id++;
-                getnameinfo((struct sockaddr *) &claddr, len, conn->client.hostname, IRC_HOSTNAME_MAX, NULL,
+                client = calloc(1, sizeof(client_s));
+                client->conn.fd = cfd;
+                client->clientId = id++;
+                getnameinfo((struct sockaddr *) &claddr, len, client->hostname, IRC_HOSTNAME_MAX, NULL,
                         0, 0);
 
-                conn->responses = g_queue_new();
-                conn->server.clients = g_clients;
-                conn->server.nicks = g_nicknames;
-                conn->server.hostname = hostname;
-                conn->server.motd = motd;
+                client->conn.responses = g_queue_new();
+                client->server.clients = g_clients;
+                client->server.nicks   = g_nicknames;
+                client->server.hostname = hostname;
+                client->server.motd = motd;
+
 
                 /*
                  * Add client to the client hash, using the ID counter.
@@ -152,7 +161,8 @@ void start_server(const struct config_s conf[static 1])
                 /* Mutex is not needed since we are single-threaded for now. */
 
                 /* pthread_mutex_lock(&g_clients_mtx); */
-                g_hash_table_insert(g_clients, GINT_TO_POINTER(conn->client.clientId), &conn->client);
+                g_hash_table_insert(g_clients, GINT_TO_POINTER(client->clientId), client);
+
                 /* pthread_mutex_unlock(&g_clients_mtx); */
 
                 /*
@@ -161,7 +171,7 @@ void start_server(const struct config_s conf[static 1])
                  * later.
                  */
                 event.events = EPOLLIN | EPOLLERR;
-                event.data.ptr = conn;
+                event.data.ptr = client;
 
                 /*
                  * Add the event.
@@ -177,15 +187,54 @@ void start_server(const struct config_s conf[static 1])
                  * Ready file descriptor was a client. Read any available data
                  * and handle the resultant messages.
                  */
-                circlog(L_DEBUG, "Handling connection for client =%d", ((conn_s *) events[j].data.ptr)->client.clientId);
-                readResult = Conn_HandleRead(events[j].data.ptr);
+                circlog(L_DEBUG, "Handling connection for client =%d", ((client_s *) events[j].data.ptr)->clientId);
 
-                if (readResult == CONN_RESULT_ERROR) {
-                    circlog(L_WARNING, "Connection encountered error.");
-                } else if (readResult == CONN_RESULT_CLOSE) {
-                    circlog(L_INFO, "Client closed connection.");
+
+                /*
+                 * Handle read events first.
+                 */
+                if (events[j].events & EPOLLIN) {
+                    circlog(L_DEBUG, "Handling EPOLLIN");
+                    readResult = Client_HandleRead(events[j].data.ptr);
+
+                    if (readResult == CONN_RESULT_ERROR) {
+                        circlog(L_WARNING, "Connection encountered error.");
+                    } else if (readResult == CONN_RESULT_CLOSE) {
+                        circlog(L_INFO, "Client closed connection.");
 //                    g_hash_table_remove(g_clients, )
+                    }
                 }
+
+                /*
+                 * If are able to, write messages from the message buffer.
+                 * We write if the last write succeeded, or if the EPOLLOUT
+                 * event has been set after EAGAIN was received.
+                 */
+//                if (conn->eagain == 0) {
+//                    if (Conn_HandleWrite((conn_s *) events[j].data.ptr) == -1) {
+//                        if (conn->eagain & EAGAIN) {
+//
+//                        }
+//                    } else {
+//                        epoll_ctl
+//                    }
+//                } else if (events[j].events & EPOLLOUT) {
+//
+//                }
+//
+//
+//                if (Conn_HandleWrite((conn_s *) events[j].data.ptr) == -1) {
+//                    if (conn->eagain & EAGAIN) {
+//
+//                    } else {
+//                        events[j].events = EPOLLIN | EPOLLOUT | EPOLLERR;
+//                        if (epoll_ctl(epfd, EPOLL_CTL_MOD, cfd, events[j].events))
+//                    }
+//                }
+//                if (events[j].events & EPOLLOUT) {
+//                    circlog(L_DEBUG, "Handling EPOLLOUT");
+//                }
+
             }
         }
     }

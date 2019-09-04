@@ -34,4 +34,6 @@ ssize_t read_message      (int fd, char *msg, char *buf, ssize_t *storeTotalRead
 //   - Message of length 513 (i.e. message[511] = '\r', message[512] = '\n'
 char * conn_read_message (conn_s *conn);
 
+
+
 #endif

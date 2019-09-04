@@ -21,6 +21,7 @@ static int Handler_User    (client_s *, server_s *, irc_message_s *, GQueue *);
 static int Handler_Ping    (client_s *, server_s *, irc_message_s *, GQueue *);
 static int Handler_Pong    (client_s *, server_s *, irc_message_s *, GQueue *);
 static int Handler_Motd    (client_s *, server_s *, irc_message_s *, GQueue *);
+static int Handler_Privmsg    (client_s *, server_s *, irc_message_s *, GQueue *);
 
 
 __attribute__((constructor))
@@ -32,6 +33,7 @@ static void Handler_Register()
     handlers2[PING]    = Handler_Ping;
     handlers2[PONG]    = Handler_Pong;
     handlers2[MOTD]    = Handler_Motd;
+    handlers2[PRIVMSG] = Handler_Privmsg;
 }
 
 int Handler_HandleMessage (client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
@@ -154,6 +156,58 @@ static int Handler_User(client_s *client, server_s *server, irc_message_s *messa
 
     return 0;
 
+}
+
+
+static int Handler_Privmsg    (client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
+{
+    int targetId;
+    response_s *response;
+    client_s *target;
+
+    circlog(L_DEBUG, "Handling PRIVMSG");
+
+    if (message->parse_err == ERR_NORECIPIENT) {
+        circlog(L_DEBUG, "No recipient specified; sending ERR_NORECIPIENT");
+
+        response = calloc(1, sizeof(response_s));
+        response->len = Reply_ErrNoRecipient(client, "PRIVMSG", response->response);
+
+        g_queue_push_tail(responses, response);
+
+        return -1;
+    } else if (message->parse_err == ERR_NOTEXTTOSEND) {
+        circlog(L_DEBUG, "No text to send found; sending ERR_NOTEXTTOSEND");
+
+        response = calloc(1, sizeof(response_s));
+        response->len = Reply_ErrNoTextToSend(client, response->response);
+
+        g_queue_push_tail(responses, response);
+
+        return -1;
+    }
+
+    targetId = GPOINTER_TO_INT(g_hash_table_lookup(server->nicks, message->message.privmsg.msgtarget));
+    if (targetId == 0) {
+        circlog(L_DEBUG, "Nick not found; sending ERR_NOSUCHNICK");
+
+        response = calloc(1, sizeof(response_s));
+        response->len = Reply_ErrNoSuchNick(client, message->message.privmsg.msgtarget, response->response);
+
+        g_queue_push_tail(responses, response);
+
+        return -1;
+    }
+
+    target = g_hash_table_lookup(server->clients, GINT_TO_POINTER(targetId));
+
+    response = calloc(1, sizeof(response_s));
+    response->len = Message_Privmsg(client, message->message.privmsg.msgtarget, message->message.privmsg.contents,
+            response->response);
+
+    Client_Send(target, response);
+
+    return 0;
 }
 
 static int Handler_Ping(client_s * client, server_s * server, irc_message_s * message, GQueue *responses)

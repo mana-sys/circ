@@ -1,6 +1,12 @@
+#include <irc.h>
+#include <unistd.h>
+
 #include "client.h"
 #include "connection.h"
+#include "handlers.h"
 #include "log.h"
+#include "parser.h"
+#include "read_message.h"
 #include "replies.h"
 
 void Client_TryRegister (client_s *client, server_s *server, response_s **response)
@@ -66,22 +72,82 @@ int Client_TryChangeNick (client_s *client, server_s *server, const char *nick, 
 }
 
 
-int Client_Send(client_s *client, const char *message)
+int Client_Send(client_s *client, response_s *response)
 {
-
+    g_queue_push_tail(client->conn.responses, response);
+    return Client_TryEmptyBuffer(client);
 }
 
 int Server_TrySend (server_s *server, client_s *from_client, const char *nick, const char *message, char *response, size_t *len)
 {
-    gpointer clientId;
-    client_s *client;
+//    gpointer clientId;
+//    client_s *client;
+//
+//    clientId = g_hash_table_lookup(server->nicks, nick);
+//    if (clientId == 0) {
+//        *len = Reply_ErrNoSuchNick(from_client, nick, response);
+//        return -1;
+//    }
+//
+//    client = g_hash_table_lookup(server->clients, GINT_TO_POINTER(clientId));
+//    return Client_Send(client, message);
+}
 
-    clientId = g_hash_table_lookup(server->nicks, nick);
-    if (clientId == 0) {
-        *len = Reply_ErrNoSuchNick(from_client, nick, response);
-        return -1;
+int Client_HandleRead(client_s * client)
+{
+    ssize_t numRead;
+    irc_message_s message;
+    response_s *response;
+    conn_s *conn;
+
+    conn = &client->conn;
+
+    numRead = read(conn->fd, conn->store, IRC_MSG_SIZE - conn->totalRead);
+    circlog(L_TRACE, "Read %ld bytes", numRead);
+    if (numRead == -1)
+        return CONN_RESULT_ERROR;
+
+    conn->totalRead += numRead;
+
+    /*
+     * Handle all messages within the store buffer.
+     */
+    while (conn_read_message(conn)) {
+        circlog(L_DEBUG, "Received message: '%s'", conn->message);
+
+        if (parse_message(conn->message, &message) != -1) {
+            Handler_HandleMessage(client, &client->server, &message, conn->responses);
+        }
+
+        while (!g_queue_is_empty(conn->responses)) {
+            circlog(L_DEBUG, "Sending response message.");
+
+            response = g_queue_pop_head(conn->responses);
+            write(client->conn.fd, response->response, response->len);
+
+            free(response);
+        }
     }
 
-    client = g_hash_table_lookup(server->clients, GINT_TO_POINTER(clientId));
-    return Client_Send(client, message);
+    if (numRead == 0) {
+        close(client->conn.fd);
+        return CONN_RESULT_CLOSE;
+    }
+
+    return 0;
+}
+
+
+int Client_TryEmptyBuffer(client_s *client)
+{
+    response_s *response;
+    while (!g_queue_is_empty(client->conn.responses)) {
+
+        response = g_queue_pop_head(client->conn.responses);
+        write(client->conn.fd, response->response, response->len);
+
+        free(response);
+    }
+
+    return 0;
 }

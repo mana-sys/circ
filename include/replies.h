@@ -9,6 +9,11 @@
 #define FMT_RPL_MOTD                "%d %s :- %s\r\n"
 #define FMT_RPL_ENDOFMOTD           "%d %s :End of MOTD command\r\n"
 
+#define FMT_ERR_NORECIPIENT         "%d %s :No recipient given (%s)\r\n"
+#define FMT_ERR_NOTEXTTOSEND        "%d %s :No text to send\r\n"
+
+#define FMT_MSG_PRIVMSG             "%s!%s@%s PRIVMSG %s :%s\r\n"
+
 #define STR_ERR_NOSUCHNICK          ":No such nick/channel"
 #define STR_ERR_NOMOTD              ":MOTD File is missing"
 #define STR_ERR_NONICKNAMEGIVEN     ":No nickname given"
@@ -26,6 +31,11 @@ int Reply_RplMotd              (client_s *, const char *, char *);
 int Reply_RplEndOfMotd         (client_s *, char *);
 int Reply_ErrNoSuchNick        (client_s *, const char *, char *);
 int Reply_ErrNoMotd            (client_s *, char *);
+
+int Reply_ErrNoRecipient       (client_s *, const char *, char *);
+int Reply_ErrNoTextToSend      (client_s *, char *);
+
+
 int Reply_ErrNoNicknameGiven   (client_s *, char *);
 int Reply_ErrNicknameInUse     (client_s *, const char *, char *);
 int Reply_ErrNeedMoreParams    (client_s *, const char *, char *);
@@ -33,5 +43,7 @@ int Reply_ErrNotRegistered     (client_s *, char *);
 int Reply_ErrAlreadyRegistered (client_s *, char *);
 int Reply_ErrUnknownCommand    (client_s *, const char *, char *);
 int Reply_Pong                 (const char *, char *);
+
+int Message_Privmsg(client_s *, const char *, const char *, char *);
 
 #endif
