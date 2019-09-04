@@ -76,6 +76,42 @@ static void TestParser_User()
 
 }
 
+
+static void TestParser_Privmsg()
+{
+    char message[] = "PRIVMSG target :Hello there!\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(PRIVMSG);
+    expect_message_parse_error_none();
+
+    TEST_ASSERT_EQUAL_STRING("target", parsed.message.privmsg.msgtarget);
+    TEST_ASSERT_EQUAL_STRING("Hello there!", parsed.message.privmsg.contents);
+}
+
+
+static void TestParser_PrivmsgNoRecipient()
+{
+    char message[] = "PRIVMSG\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(PRIVMSG);
+    expect_message_parse_error(ERR_NORECIPIENT);
+}
+
+static void TestParser_PrivmsgNoTextToSend()
+{
+    char message[] = "PRIVMSG target\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(PRIVMSG);
+    expect_message_parse_error(ERR_NOTEXTTOSEND);
+}
+
+
 static void TestParser_UserNeedMoreParams1()
 {
     char message[] = "USER\r\n";
@@ -144,6 +180,7 @@ static void TestParser_Motd()
     expect_message_type(MOTD);
 }
 
+
 int main() {
     UnityBegin("test_parser.c");
 
@@ -164,6 +201,10 @@ int main() {
     RUN_TEST(TestParser_Pong);
 
     RUN_TEST(TestParser_Motd);
+
+    RUN_TEST(TestParser_Privmsg);
+    RUN_TEST(TestParser_PrivmsgNoRecipient);
+    RUN_TEST(TestParser_PrivmsgNoTextToSend);
 
     return UnityEnd();
 }
