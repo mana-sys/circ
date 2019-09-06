@@ -8,6 +8,23 @@
 #include "read_message.h"
 
 
+int Conn_ReadStoreBuffer(conn_s *conn)
+{
+    ssize_t numRead;
+
+    /*
+     * Try to read buffer to full.
+     */
+    if ((numRead = read(conn->fd, conn->store, IRC_MSG_SIZE - conn->totalRead) == -1) {
+        return -1;
+    }
+
+    conn->totalRead += numRead;
+
+    return 0;
+}
+
+
 //int Conn_HandleRead (conn_s *conn)
 //{
 //    ssize_t numRead;

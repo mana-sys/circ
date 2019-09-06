@@ -102,12 +102,11 @@ int Client_HandleRead(client_s * client)
 
     conn = &client->conn;
 
-    numRead = read(conn->fd, conn->store, IRC_MSG_SIZE - conn->totalRead);
-    circlog(L_TRACE, "Read %ld bytes", numRead);
-    if (numRead == -1)
-        return CONN_RESULT_ERROR;
-
-    conn->totalRead += numRead;
+    /*
+     * Read as many bytes as possible from the connection's file descriptor.
+     */
+    if ((numRead = Conn_ReadStoreBuffer(conn)) == -1)
+        return -1;
 
     /*
      * Handle all messages within the store buffer.
@@ -129,8 +128,12 @@ int Client_HandleRead(client_s * client)
         }
     }
 
+    /*
+     * If the connection was closed, close the connection's file descriptor
+     * and return.
+     */
     if (numRead == 0) {
-        close(client->conn.fd);
+        Conn_Close(conn);
         return CONN_RESULT_CLOSE;
     }
 

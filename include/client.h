@@ -9,6 +9,9 @@
 #include "irc_constants.h"
 
 
+/*
+ * Structure to hold server data.
+ */
 typedef struct server_s {
     GHashTable *nicks;      /* Map from nicks (string) to client IDs (int) */
     GHashTable *clients;    /* Map from client IDs (int) to clients (client_s *) */
@@ -17,6 +20,9 @@ typedef struct server_s {
 } server_s;
 
 
+/*
+ * Structure to hold client data.
+ */
 typedef struct client_s {
     bool registered, receivedNick, receivedUser;
     int clientId;
@@ -30,6 +36,10 @@ typedef struct client_s {
 } client_s;
 
 
+/*
+ * Structure to represent a response message, consisting of the response
+ * body and its length.
+ */
 typedef struct response_s {
     char    response[IRC_MSG_SIZE];
     size_t  len;

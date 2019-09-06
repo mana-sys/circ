@@ -41,8 +41,29 @@ int handle_read(conn_s *conn);
 
 
 /**
+ * Attempts to read the conn_s structure's store buffer to full. The amount of bytes
+ * that will be tried to be read is (IRC_MESSAGE_SIZE - totalRead).
+ *
+ * @param conn The connection on which the read will be performed.
+ * @return 0 on success, -1 on error
+ */
+int Conn_ReadStoreBuffer(conn_s *conn);
+
+
+/**
+ * Closes the connection's file descriptor and frees the resources associated with the
+ * connection.
+ *
+ * @param conn The connection to close.
+ * @return 0 on success, -1 on error
+ */
+int Conn_Close(conn_s *conn);
+
+
+/**
  * Do a non-blocking read on the connection's file descriptor. After doing the read,
  * parse and handle the messages in the store buffer.
+ *
  * @param conn The connection to perform the read on.
  * @return CONN_RESULT_ERROR on error, CONN_RESULT_NORMAL on normal read,
  * CONN_RESULT_CLOSE on client closed connection.
