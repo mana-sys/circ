@@ -20,6 +20,13 @@ void tearDown()
 {
 }
 
+static void TestParser_Invalid()
+{
+    char message[] = "\r\n";
+
+    TEST_ASSERT_EQUAL_INT(-1, parse_message(message, &parsed));
+}
+
 static void TestParser_Unknown()
 {
     char message[] = "UNKNOWNMESSAGE param1\r\n";
@@ -180,9 +187,20 @@ static void TestParser_Motd()
     expect_message_type(MOTD);
 }
 
+static void TestParser_LUsers()
+{
+    char message[] = "LUSERS\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(LUSERS);
+}
+
 
 int main() {
     UnityBegin("test_parser.c");
+
+    RUN_TEST(TestParser_Invalid);
 
     RUN_TEST(TestParser_Unknown);
 
@@ -205,6 +223,8 @@ int main() {
     RUN_TEST(TestParser_Privmsg);
     RUN_TEST(TestParser_PrivmsgNoRecipient);
     RUN_TEST(TestParser_PrivmsgNoTextToSend);
+
+    RUN_TEST(TestParser_LUsers);
 
     return UnityEnd();
 }

@@ -62,6 +62,8 @@ void start_server(const struct config_s conf[static 1])
     gethostname(hostname, IRC_HOSTNAME_MAX);
     circlog(L_DEBUG, "Hostname is %s.", hostname);
 
+    server_s server = {.nicks = g_nicknames, .clients = g_clients, .motd = motd, .hostname = hostname};
+
     circlog(L_DEBUG, "Using hostname %s and port %u.", conf->host, conf->port);
 
     circlog(L_TRACE, "Creating server socket.");
@@ -146,10 +148,10 @@ void start_server(const struct config_s conf[static 1])
                         0, 0);
 
                 client->conn.responses = g_queue_new();
-                client->server.clients = g_clients;
-                client->server.nicks   = g_nicknames;
-                client->server.hostname = hostname;
-                client->server.motd = motd;
+                client->server = &server;
+
+
+                server.nUnknown++;
 
 
                 /*

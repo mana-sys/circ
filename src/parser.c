@@ -14,6 +14,7 @@ static int parse_message_ping    (struct irc_message *message, char *saveptr);
 static int parse_message_pong    (struct irc_message *message, char *saveptr);
 static int parse_message_privmsg (struct irc_message *message, char *saveptr);
 static int parse_message_motd    (struct irc_message *message, char *saveptr);
+static int parse_message_lusers  (struct irc_message *message, char *saveptr);
 
 
 int parse_message(char *buf, struct irc_message *message)
@@ -36,6 +37,8 @@ int parse_message(char *buf, struct irc_message *message)
             return parse_message_motd(message, saveptr);
         } else if (strcmp(tok, "PRIVMSG") == 0) {
             return parse_message_privmsg(message, saveptr);
+        } else if (strcmp(tok, "LUSERS") == 0) {
+            return parse_message_lusers(message, saveptr);
         } else {
             message->type = UNKNOWN;
             return 0;
@@ -179,3 +182,8 @@ static int parse_message_motd(struct irc_message *message, char *saveptr)
     return 0;
 }
 
+static int parse_message_lusers(struct irc_message *message, char *saveptr)
+{
+    message->type = LUSERS;
+    return 0;
+}

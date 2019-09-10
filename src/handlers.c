@@ -12,6 +12,13 @@
 
 #define MOTD_FRAGMENT_MAX 80
 
+#define push_reply(responses, reply_func, ...) {                    \
+    response_s *response = calloc(1, sizeof(response_s));           \
+    response->len = reply_func(__VA_ARGS__, response->response);    \
+    g_queue_push_tail(responses, response);                         \
+}
+
+
 static handler1_t handlers1[20];
 static handler2_t handlers2[20];
 
@@ -21,7 +28,8 @@ static int Handler_User    (client_s *, server_s *, irc_message_s *, GQueue *);
 static int Handler_Ping    (client_s *, server_s *, irc_message_s *, GQueue *);
 static int Handler_Pong    (client_s *, server_s *, irc_message_s *, GQueue *);
 static int Handler_Motd    (client_s *, server_s *, irc_message_s *, GQueue *);
-static int Handler_Privmsg    (client_s *, server_s *, irc_message_s *, GQueue *);
+static int Handler_Privmsg (client_s *, server_s *, irc_message_s *, GQueue *);
+static int Handler_LUsers  (client_s *, server_s *, irc_message_s *, GQueue *);
 
 
 __attribute__((constructor))
@@ -34,6 +42,7 @@ static void Handler_Register()
     handlers2[PONG]    = Handler_Pong;
     handlers2[MOTD]    = Handler_Motd;
     handlers2[PRIVMSG] = Handler_Privmsg;
+    handlers2[LUSERS]  = Handler_LUsers;
 }
 
 int Handler_HandleMessage (client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
@@ -274,6 +283,29 @@ static int Handler_Motd(client_s * client, server_s *server, irc_message_s *mess
     g_queue_push_tail(responses, response);
 
 
+
+    return 0;
+}
+
+
+static int Handler_LUsers(client_s * client, server_s *server, irc_message_s *message, GQueue *responses)
+{
+
+    push_reply(responses, Reply_RplLUserClient, client, server);
+
+    if (server->nOperators) {
+        push_reply(responses, Reply_RplLUserOp, client, server);
+    }
+
+    if (server->nUnknown) {
+        push_reply(responses, Reply_RplLUserUnknown, client, server);
+    }
+
+    if (server->nChannels) {
+        push_reply(responses, Reply_RplLUserChannels, client, server);
+    }
+
+    push_reply(responses, Reply_RplLUserMe, client, server);
 
     return 0;
 }

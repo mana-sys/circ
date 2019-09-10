@@ -16,7 +16,13 @@ typedef struct server_s {
     GHashTable *nicks;      /* Map from nicks (string) to client IDs (int) */
     GHashTable *clients;    /* Map from client IDs (int) to clients (client_s *) */
     const char *hostname;   /* Pointer to the server's hostname. */
-    const char *motd;
+    const char *motd;       /* Message of the day. */
+    uint32_t    nUsers;     /* Number of currently registered users online. */
+    uint32_t    nServices;
+    uint32_t    nUnknown;   /* Number of unknown connections, i.e. users that have not registered. */
+    uint32_t    nOperators; /* Number of operators currently online. */
+    uint32_t    nChannels;
+    uint32_t    nServers;
 } server_s;
 
 
@@ -27,12 +33,11 @@ typedef struct client_s {
     bool registered, receivedNick, receivedUser;
     int clientId;
     conn_s  conn;
-    server_s server;
+    server_s *server;
     char nickname[IRC_NICK_SIZE + 1];
     char username[IRC_MSG_SIZE];
     char hostname[IRC_HOSTNAME_MAX + 1];
     char fullname[IRC_MSG_SIZE];
-
 } client_s;
 
 

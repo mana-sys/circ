@@ -23,6 +23,8 @@ void Client_TryRegister (client_s *client, server_s *server, response_s **respon
          */
         g_hash_table_insert(server->clients, GINT_TO_POINTER(client->clientId), client);
         client->registered = true;
+        client->server->nUnknown--;
+        client->server->nUsers++;
         (*response)->len = Reply_RplWelcome(client, (*response)->response);
         return;
     }
@@ -115,7 +117,7 @@ int Client_HandleRead(client_s * client)
         circlog(L_DEBUG, "Received message: '%s'", conn->message);
 
         if (parse_message(conn->message, &message) != -1) {
-            Handler_HandleMessage(client, &client->server, &message, conn->responses);
+            Handler_HandleMessage(client, client->server, &message, conn->responses);
         }
 
         while (!g_queue_is_empty(conn->responses)) {
@@ -133,7 +135,14 @@ int Client_HandleRead(client_s * client)
      * and return.
      */
     if (numRead == 0) {
-        Conn_Close(conn);
+//        Conn_Close(conn);
+        close(conn->fd);
+
+        if (client->registered)
+            client->server->nUsers--;
+        else
+            client->server->nUnknown--;
+
         return CONN_RESULT_CLOSE;
     }
 

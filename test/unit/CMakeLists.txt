@@ -23,7 +23,7 @@ add_executable(test_read_message test_read_message.c ${UNITY_SOURCES} ${CMAKE_SO
 add_executable(test_hashtable test_hashtable.c ${UNITY_SOURCES} ${CMAKE_SOURCE_DIR}/src/hashtable.c)
 add_executable(test_handlers test_handlers.c ${UNITY_SOURCES} ${CMAKE_SOURCE_DIR}/src/handlers.c ${CMAKE_SOURCE_DIR}/src/log.c ${CMAKE_SOURCE_DIR}/src/hashtable.c
         ${CMAKE_SOURCE_DIR}/src/replies.c ${CMAKE_SOURCE_DIR}/src/client.c ${CMAKE_SOURCE_DIR}/src/parser.c ${CMAKE_SOURCE_DIR}/src/msgtok.c ${CMAKE_SOURCE_DIR}/src/msgtok.c
-        ${CMAKE_SOURCE_DIR}/src/read_message.c)
+        ${CMAKE_SOURCE_DIR}/src/read_message.c ${CMAKE_SOURCE_DIR}/src/connection.c)
 add_executable(test_read_message1 test_read_message1.c ${UNITY_SOURCES} ${CMAKE_SOURCE_DIR}/src/read_message.c)
 add_executable(test_motd test_motd.c ${UNITY_SOURCES} ${CMAKE_SOURCE_DIR}/src/motd.c)
 

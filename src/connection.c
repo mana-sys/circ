@@ -15,13 +15,13 @@ int Conn_ReadStoreBuffer(conn_s *conn)
     /*
      * Try to read buffer to full.
      */
-    if ((numRead = read(conn->fd, conn->store, IRC_MSG_SIZE - conn->totalRead) == -1) {
+    if ((numRead = read(conn->fd, conn->store, IRC_MSG_SIZE - conn->totalRead)) == -1) {
         return -1;
     }
 
     conn->totalRead += numRead;
 
-    return 0;
+    return numRead;
 }
 
 

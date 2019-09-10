@@ -9,6 +9,15 @@
 #define FMT_RPL_MOTD                "%d %s :- %s\r\n"
 #define FMT_RPL_ENDOFMOTD           "%d %s :End of MOTD command\r\n"
 
+/*
+ * LUSERS replies.
+ */
+#define FMT_RPL_LUSERCLIENT             "251 %s :There are %d users and %d services on %d servers\r\n"
+#define FMT_RPL_LUSEROP                 "252 %s %d :operator(s) online\r\n"
+#define FMT_RPL_LUSERUNKNOWN            "253 %s %d :unknown connection(s)\r\n"
+#define FMT_RPL_LUSERCHANNELS           "254 %s %d :channels formed\r\n"
+#define FMT_RPL_LUSERME                 "255 %s :I have %d clients and %d servers\r\n"
+
 #define FMT_ERR_NORECIPIENT         "%d %s :No recipient given (%s)\r\n"
 #define FMT_ERR_NOTEXTTOSEND        "%d %s :No text to send\r\n"
 
@@ -34,6 +43,16 @@ int Reply_ErrNoMotd            (client_s *, char *);
 
 int Reply_ErrNoRecipient       (client_s *, const char *, char *);
 int Reply_ErrNoTextToSend      (client_s *, char *);
+
+
+/*
+ * LUSERS replies.
+ */
+int Reply_RplLUserClient   (client_s *client, server_s *server, char *response);
+int Reply_RplLUserOp       (client_s *client, server_s *server, char *response);
+int Reply_RplLUserUnknown  (client_s *client, server_s *server, char *response);
+int Reply_RplLUserChannels (client_s *client, server_s *server, char *response);
+int Reply_RplLUserMe       (client_s *client, server_s *server, char *response);
 
 
 int Reply_ErrNoNicknameGiven   (client_s *, char *);

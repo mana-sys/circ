@@ -73,6 +73,44 @@ int Reply_ErrNoTextToSend(client_s * client, char *response)
 }
 
 
+/*
+ * LUSERS formatting functions.
+ */
+int Reply_RplLUserClient(client_s *client, server_s *server, char *response)
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_LUSERCLIENT, client->nickname,
+            server->nUsers, server->nServices, 1);
+}
+
+
+int Reply_RplLUserOp(client_s *client, server_s *server, char *response)
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_LUSEROP, client->nickname,
+            server->nOperators);
+}
+
+
+int Reply_RplLUserUnknown(client_s *client, server_s *server, char *response)
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_LUSERUNKNOWN, client->nickname,
+            server->nUnknown);
+}
+
+
+int Reply_RplLUserChannels(client_s *client, server_s *server, char *response)
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_LUSERCHANNELS, client->nickname,
+            server->nChannels);
+}
+
+
+int Reply_RplLUserMe(client_s *client, server_s *server, char *response)
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_LUSERME, client->nickname,
+            server->nUsers + server->nUnknown, server->nServices);
+}
+
+
 
 int Reply_ErrNotRegistered     (client_s *client, char *response)
 {

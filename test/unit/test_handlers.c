@@ -69,6 +69,8 @@ static void expect_responses_internal(response_s * expected)
         expected++;
     }
 
+    TEST_ASSERT_TRUE_MESSAGE(g_queue_is_empty(responses), "Received more messages than expected");
+
 }
 
 #define expect_responses(...) {                                                 \
@@ -169,7 +171,7 @@ static void TestHandlers_Unknown()
 
 static void TestHandlers_Nick()
 {
-    with_client(.clientId = 1);
+    with_client(.clientId = 1, .server = &server);
     with_server(.nicks = nicknames);
     with_message(.type = NICK, .message.nick = {.nick = "nick"});
 
@@ -182,7 +184,7 @@ static void TestHandlers_Nick()
 
 static void TestHandlers_NickNewNick()
 {
-    with_client(.clientId = 1, .nickname = "nickOld", .receivedNick = true);
+    with_client(.clientId = 1, .nickname = "nickOld", .receivedNick = true, .server = &server);
     with_server(.nicks = nicknames);
     with_message(.type = NICK, .message.nick = {.nick = "nickNew"});
 
@@ -196,7 +198,7 @@ static void TestHandlers_NickNewNick()
 
 static void TestHandlers_Nick_NicknameInUse()
 {
-    with_client(.clientId = 2);
+    with_client(.clientId = 2, .server = &server);
     with_nicks({.id = 1, .nick = "nick"});
     with_server(.nicks = nicknames);
     with_message(.type = NICK, .message.nick = {.nick = "nick"});
@@ -210,7 +212,7 @@ static void TestHandlers_Nick_NicknameInUse()
 
 static void TestHandlers_Nick_NoNicknameGiven()
 {
-    with_client(.clientId = 1);
+    with_client(.clientId = 1, .server = &server);
     with_server(.nicks = nicknames);
     with_message(.type = NICK, .parse_err = ERR_NONICKNAMEGIVEN);
 
@@ -223,7 +225,7 @@ static void TestHandlers_Nick_NoNicknameGiven()
 static void TestHandlers_Nick_SuccessfulRegistration()
 {
     with_client(.clientId = 1, .username = "john", .fullname = "John Doe", .receivedUser = true,
-            .hostname = "localhost");
+            .hostname = "localhost", .server = &server);
     with_server(.nicks = nicknames, .clients = clients);
     with_message(.type = NICK, .message.nick = {.nick = "nick"});
 
@@ -236,7 +238,7 @@ static void TestHandlers_Nick_SuccessfulRegistration()
 
 static void TestHandlers_User()
 {
-    with_client(.clientId = 1);
+    with_client(.clientId = 1, .server = &server);
     with_server(.nicks = nicknames, .clients = clients);
     with_message(.type = USER, .message.user.fullname = "fullname", .message.user.username = "username");
 
@@ -249,7 +251,7 @@ static void TestHandlers_User()
 
 static void TestHandlers_UserNeedMoreParams()
 {
-    with_client(.clientId = 1);
+    with_client(.clientId = 1, .server = &server);
     with_message(.type = USER, .parse_err = ERR_NEEDMOREPARAMS);
 
     TestHandlers_Run();
@@ -260,7 +262,7 @@ static void TestHandlers_UserNeedMoreParams()
 static void TestHandlers_UserAlreadyRegistered()
 {
     with_client(.clientId = 1, .registered = true, .receivedNick = true, .receivedUser = true,
-            .nickname = "nick", .username = "username", .fullname = "fullname");
+            .nickname = "nick", .username = "username", .fullname = "fullname", .server = &server);
     with_message(.type = USER, .message.user.username = "username", .message.user.fullname = "fullname");
 
     TestHandlers_Run();
@@ -270,7 +272,8 @@ static void TestHandlers_UserAlreadyRegistered()
 
 static void TestHandlers_UserSuccessfulRegistration()
 {
-    with_client(.clientId = 1, .receivedNick = true, .nickname = "nick", .hostname = "localhost");
+    with_client(.clientId = 1, .receivedNick = true, .nickname = "nick", .hostname = "localhost",
+                .server = &server);
     with_server(.clients = clients);
     with_message(.type = USER, .message.user.username = "username", .message.user.fullname = "fullname");
 
@@ -282,7 +285,8 @@ static void TestHandlers_UserSuccessfulRegistration()
 
 static void TestHandlers_PrivmsgNoRecipient()
 {
-    with_client(.clientId = 1, .receivedNick = true, .nickname = "nick", .hostname = "localhost");
+    with_client(.clientId = 1, .receivedNick = true, .nickname = "nick", .hostname = "localhost",
+                .server = &server);
     with_server(.clients = clients);
     with_message(.type = PRIVMSG, .parse_err = ERR_NORECIPIENT);
 
@@ -293,7 +297,8 @@ static void TestHandlers_PrivmsgNoRecipient()
 
 static void TestHandlers_PrivmsgNoTextToSend()
 {
-    with_client(.clientId = 1, .receivedNick = true, .nickname = "nick", .hostname = "localhost");
+    with_client(.clientId = 1, .receivedNick = true, .nickname = "nick", .hostname = "localhost",
+                .server = &server);
     with_server(.clients = clients);
     with_message(.type = PRIVMSG, .parse_err = ERR_NOTEXTTOSEND);
 
@@ -324,7 +329,7 @@ static void TestHandlers_Pong()
 static void TestHandlers_Motd()
 {
     with_server(.motd = "MOTD is here", .hostname = "hostname");
-    with_client(.nickname = "nick", .receivedNick = TRUE);
+    with_client(.nickname = "nick", .receivedNick = TRUE, .server = &server);
     with_message(.type = MOTD);
 
     TestHandlers_Run();
@@ -338,7 +343,7 @@ static void TestHandlers_Motd()
 static void TestHandlers_Motd_LongMessage()
 {
     with_server(.motd = MOTD_LONG, .hostname = "hostname");
-    with_client(.nickname = "nick", .receivedNick = TRUE);
+    with_client(.nickname = "nick", .receivedNick = TRUE, .server = &server);
     with_message(.type = MOTD);
 
     TestHandlers_Run();
@@ -354,12 +359,39 @@ static void TestHandlers_Motd_LongMessage()
 static void TestHandlers_Motd_NoMotd()
 {
     with_server(.motd = NULL);
-    with_client(.nickname = "nick", .receivedNick = TRUE);
+    with_client(.nickname = "nick", .receivedNick = TRUE, .server = &server);
     with_message(.type = MOTD);
 
     TestHandlers_Run();
 
     expect_responses({.response = "422 nick :MOTD File is missing\r\n", .len = 1});
+}
+
+static void TestHandlers_LUsers()
+{
+    with_server(.nUsers = 1, .nServices = 1, .nServers = 1);
+    with_client(.nickname = "nick", .registered = true, .server = &server);
+    with_message(.type = LUSERS);
+
+    TestHandlers_Run();
+
+    expect_responses({.response = "251 nick :There are 1 users and 1 services on 1 servers\r\n", .len = 1},
+                     {.response = "255 nick :I have 1 clients and 1 servers\r\n"})
+}
+
+static void TestHandlers_LUsers_Full()
+{
+    with_server(.nUsers = 1, .nOperators = 1, .nUnknown = 1, .nChannels = 1, .nServers = 1, .nServices = 1);
+    with_client(.nickname = "nick", .registered = true, .server = &server);
+    with_message(.type = LUSERS);
+
+    TestHandlers_Run();
+
+    expect_responses({.response = "251 nick :There are 1 users and 1 services on 1 servers\r\n", .len = 1},
+                     {.response = "252 nick 1 :operator(s) online\r\n", .len = 1},
+                     {.response = "253 nick 1 :unknown connection(s)\r\n", .len = 1},
+                     {.response = "254 nick 1 :channels formed\r\n", .len = 1},
+                     {.response = "255 nick :I have 2 clients and 1 servers\r\n", .len = 1});
 }
 
 int main()
@@ -368,12 +400,18 @@ int main()
 
     RUN_TEST(TestHandlers_Unknown);
 
+    /*
+     * NICK tests.
+     */
     RUN_TEST(TestHandlers_Nick);
     RUN_TEST(TestHandlers_NickNewNick);
     RUN_TEST(TestHandlers_Nick_NicknameInUse);
     RUN_TEST(TestHandlers_Nick_NoNicknameGiven);
     RUN_TEST(TestHandlers_Nick_SuccessfulRegistration);
 
+    /*
+     * USER tests.
+     */
     RUN_TEST(TestHandlers_User);
     RUN_TEST(TestHandlers_UserNeedMoreParams);
     RUN_TEST(TestHandlers_UserAlreadyRegistered);
@@ -383,12 +421,25 @@ int main()
 
     RUN_TEST(TestHandlers_Pong);
 
+    /*
+     * MOTD tests.
+     */
     RUN_TEST(TestHandlers_Motd);
     RUN_TEST(TestHandlers_Motd_LongMessage);
     RUN_TEST(TestHandlers_Motd_NoMotd);
 
+    /*
+     * PRIVMSG tests.
+     */
     RUN_TEST(TestHandlers_PrivmsgNoRecipient);
     RUN_TEST(TestHandlers_PrivmsgNoTextToSend);
+
+    /*
+     * LUSERS tests.
+     */
+    RUN_TEST(TestHandlers_LUsers);
+    RUN_TEST(TestHandlers_LUsers_Full);
+
 
     return UnityEnd();
 }
