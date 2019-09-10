@@ -35,6 +35,11 @@ struct irc_message_lusers {
     char *target;
 };
 
+struct irc_message_whois {
+    char *target;
+    char *mask;
+};
+
 typedef struct irc_message {
     enum irc_message_type type;
     char *command;
@@ -44,6 +49,7 @@ typedef struct irc_message {
         struct irc_message_user user;
         struct irc_message_privmsg privmsg;
         struct irc_message_lusers lusers;
+        struct irc_message_whois whois;
     } message;
 } irc_message_s;
 

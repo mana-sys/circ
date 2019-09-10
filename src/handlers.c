@@ -12,11 +12,11 @@
 
 #define MOTD_FRAGMENT_MAX 80
 
-#define push_reply(responses, reply_func, ...) {                    \
+#define push_reply(responses, reply_func, ...) do {                 \
     response_s *response = calloc(1, sizeof(response_s));           \
     response->len = reply_func(__VA_ARGS__, response->response);    \
     g_queue_push_tail(responses, response);                         \
-}
+} while (0)
 
 
 static handler1_t handlers1[20];
@@ -30,6 +30,8 @@ static int Handler_Pong    (client_s *, server_s *, irc_message_s *, GQueue *);
 static int Handler_Motd    (client_s *, server_s *, irc_message_s *, GQueue *);
 static int Handler_Privmsg (client_s *, server_s *, irc_message_s *, GQueue *);
 static int Handler_LUsers  (client_s *, server_s *, irc_message_s *, GQueue *);
+static int Handler_WhoIs   (client_s *, server_s *, irc_message_s *, GQueue *);
+
 
 
 __attribute__((constructor))
@@ -43,6 +45,7 @@ static void Handler_Register()
     handlers2[MOTD]    = Handler_Motd;
     handlers2[PRIVMSG] = Handler_Privmsg;
     handlers2[LUSERS]  = Handler_LUsers;
+    handlers2[WHOIS]   = Handler_WhoIs;
 }
 
 int Handler_HandleMessage (client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
@@ -306,6 +309,32 @@ static int Handler_LUsers(client_s * client, server_s *server, irc_message_s *me
     }
 
     push_reply(responses, Reply_RplLUserMe, client, server);
+
+    return 0;
+}
+
+static int Handler_WhoIs(client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
+{
+    int          queriedId;
+    const char * nickMask;
+    client_s   * queried;
+
+    if ((nickMask = message->message.whois.mask) == NULL) {
+        return 0;
+    }
+
+    queriedId = GPOINTER_TO_INT(g_hash_table_lookup(server->nicks, nickMask));
+
+    if (!queriedId) {
+        push_reply(responses, Reply_ErrNoSuchNick, client, nickMask);
+        return -1;
+    }
+
+    queried = g_hash_table_lookup(server->clients, GINT_TO_POINTER(queriedId));
+
+    push_reply(responses, Reply_RplWhoIsUser, client, queried);
+    push_reply(responses, Reply_RplWhoIsServer, client, queried);
+    push_reply(responses, Reply_RplEndOfWhoIs, client, queried);
 
     return 0;
 }

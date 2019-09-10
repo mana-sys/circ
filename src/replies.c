@@ -111,6 +111,29 @@ int Reply_RplLUserMe(client_s *client, server_s *server, char *response)
 }
 
 
+/*
+ * WHOIS formatting functions.
+ */
+int Reply_RplWhoIsUser(client_s *client, client_s *queried, char response[static IRC_MSG_SIZE])
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_WHOISUSER, client->nickname,
+            queried->nickname, queried->username, queried->hostname, queried->fullname);
+}
+
+
+int Reply_RplWhoIsServer(client_s *client, client_s *queried, char response[static IRC_MSG_SIZE])
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_WHOISSERVER, client->nickname,
+            queried->nickname, queried->server->hostname, "cIRC, version 0.1");
+}
+
+
+int Reply_RplEndOfWhoIs(client_s *client, client_s *queried, char response[static IRC_MSG_SIZE])
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_ENDOFWHOIS, client->nickname,
+            queried->nickname);
+}
+
 
 int Reply_ErrNotRegistered     (client_s *client, char *response)
 {

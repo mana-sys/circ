@@ -23,6 +23,14 @@
 
 #define FMT_MSG_PRIVMSG             "%s!%s@%s PRIVMSG %s :%s\r\n"
 
+
+/*
+ * WHOIS replies.
+ */
+#define FMT_RPL_WHOISUSER           "311 %s %s %s %s * :%s\r\n"
+#define FMT_RPL_WHOISSERVER         "312 %s %s %s :%s\r\n"
+#define FMT_RPL_ENDOFWHOIS          "318 %s %s :End of WHOIS list\r\n"
+
 #define STR_ERR_NOSUCHNICK          ":No such nick/channel"
 #define STR_ERR_NOMOTD              ":MOTD File is missing"
 #define STR_ERR_NONICKNAMEGIVEN     ":No nickname given"
@@ -41,6 +49,10 @@ int Reply_RplEndOfMotd         (client_s *, char *);
 int Reply_ErrNoSuchNick        (client_s *, const char *, char *);
 int Reply_ErrNoMotd            (client_s *, char *);
 
+
+/*
+ * PRIVMSG replies.
+ */
 int Reply_ErrNoRecipient       (client_s *, const char *, char *);
 int Reply_ErrNoTextToSend      (client_s *, char *);
 
@@ -54,6 +66,12 @@ int Reply_RplLUserUnknown  (client_s *client, server_s *server, char *response);
 int Reply_RplLUserChannels (client_s *client, server_s *server, char *response);
 int Reply_RplLUserMe       (client_s *client, server_s *server, char *response);
 
+/*
+ * WHOIS replies.
+ */
+int Reply_RplWhoIsUser   (client_s *client, client_s *queried, char response[static IRC_MSG_SIZE]);
+int Reply_RplWhoIsServer (client_s *client, client_s *queried, char response[static IRC_MSG_SIZE]);
+int Reply_RplEndOfWhoIs  (client_s *client, client_s *queried, char response[static IRC_MSG_SIZE]);
 
 int Reply_ErrNoNicknameGiven   (client_s *, char *);
 int Reply_ErrNicknameInUse     (client_s *, const char *, char *);
