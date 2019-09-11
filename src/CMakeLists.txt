@@ -11,9 +11,11 @@ set(CIRC_SRC
         motd.c
         msgtok.c
         parser.c
+        reactor.c
         read_message.c
         replies.c
         server.c
+        socket.c
         )
 
 find_package(Threads REQUIRED)

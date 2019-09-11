@@ -7,37 +7,21 @@
 
 #include "connection.h"
 #include "irc_constants.h"
-
-
-/*
- * Structure to hold server data.
- */
-typedef struct server_s {
-    GHashTable *nicks;      /* Map from nicks (string) to client IDs (int) */
-    GHashTable *clients;    /* Map from client IDs (int) to clients (client_s *) */
-    const char *hostname;   /* Pointer to the server's hostname. */
-    const char *motd;       /* Message of the day. */
-    uint32_t    nUsers;     /* Number of currently registered users online. */
-    uint32_t    nServices;
-    uint32_t    nUnknown;   /* Number of unknown connections, i.e. users that have not registered. */
-    uint32_t    nOperators; /* Number of operators currently online. */
-    uint32_t    nChannels;
-    uint32_t    nServers;
-} server_s;
+#include "server.h"
 
 
 /*
  * Structure to hold client data.
  */
 typedef struct client_s {
-    bool registered, receivedNick, receivedUser;
-    int clientId;
-    conn_s  conn;
-    server_s *server;
-    char nickname[IRC_NICK_SIZE + 1];
-    char username[IRC_MSG_SIZE];
-    char hostname[IRC_HOSTNAME_MAX + 1];
-    char fullname[IRC_MSG_SIZE];
+    bool        registered, receivedNick, receivedUser;
+    int         clientId;
+    conn_s      conn;
+    server_s *  server;
+    char        nickname[IRC_NICK_SIZE + 1];
+    char        username[IRC_MSG_SIZE];
+    char        hostname[IRC_HOSTNAME_MAX + 1];
+    char        fullname[IRC_MSG_SIZE];
 } client_s;
 
 
@@ -81,6 +65,16 @@ int Client_TryChangeNick (client_s *client, server_s *server, const char *nick, 
  * @return 0 on success, -1 on error
  */
 int Client_Send(client_s *client, response_s *response);
+
+
+void Client_HandleReadEvent(void *instance);
+
+
+void Server_HandleReadEvent(void *instance);
+
+void Client_HandleWriteEvent(void *instance);
+void Server_HandleWriteEvent(void *instance);
+
 
 
 int Client_TryEmptyBuffer(client_s *client);

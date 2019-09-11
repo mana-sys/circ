@@ -1,11 +1,14 @@
 #include <irc.h>
 #include <unistd.h>
+#include <netinet/in.h>
+#include <netdb.h>
 
 #include "client.h"
 #include "connection.h"
 #include "handlers.h"
 #include "log.h"
 #include "parser.h"
+#include "reactor.h"
 #include "read_message.h"
 #include "replies.h"
 
@@ -147,6 +150,87 @@ int Client_HandleRead(client_s * client)
     }
 
     return 0;
+}
+
+
+void Client_HandleReadEvent(void *instance)
+{
+    int result;
+    client_s *client;
+
+    client = instance;
+
+    result = Client_HandleRead(client);
+
+    if (result == CONN_RESULT_ERROR) {
+        circlog(L_WARNING, "Connection encountered error.");
+    } else if (result == CONN_RESULT_CLOSE) {
+        circlog(L_INFO, "Client closed connection.");
+    }
+}
+
+
+void Client_HandleWriteEvent(void *instance)
+{
+
+}
+
+
+void Server_HandleWriteEvent(void *instance)
+{
+
+}
+
+
+void Server_HandleReadEvent(void *instance)
+{
+    int                     flags;
+    socklen_t               len;
+    server_s *              server;
+    client_s *              client;
+    reactor_event_handler_s handler;
+    struct sockaddr_in      addr;
+
+    server = instance;
+    len = sizeof(struct sockaddr_in);
+    client = calloc(1, sizeof(client_s));
+
+    /*
+     * Accept the connection.
+     */
+    if ((client->conn.fd = accept(server->fd, (struct sockaddr *) &addr, &len)) == -1) {
+        Log_Error("Unable to accept connection.");
+        goto error;
+    }
+
+    /*
+     * Fill the fields of the client struct.
+     */
+    client->clientId = server->idCounter++;
+    client->conn.responses = g_queue_new();
+    client->server = server;
+    getnameinfo((struct sockaddr *) &addr, len, client->hostname, IRC_HOSTNAME_MAX, NULL, 0, 0);
+
+
+    server->nUnknown++;
+
+
+    g_hash_table_insert(server->clients, GINT_TO_POINTER(client->clientId), client);
+
+    handler.fd = client->conn.fd;
+    handler.instance = client;
+    handler.handle_read = Client_HandleReadEvent;
+    handler.handle_write = NULL;
+
+    if (Reactor_RegisterHandler(&handler) == -1) {
+        Log_Error("Failed to register handler for client =%d", client->clientId);
+        goto error;
+    }
+
+    return;
+
+    error:
+    free(client);
 }
 
 
