@@ -15,6 +15,7 @@ typedef struct server_s {
     int             idCounter;
     GHashTable *    nicks;      /* Map from nicks (string) to client IDs (int) */
     GHashTable *    clients;    /* Map from client IDs (int) to clients (client_s *) */
+    GHashTable *    channels;   /* Map from channel names (lowercase) to channel pointers. */
     char            hostname[HOSTNAME_MAX];   /* Pointer to the server's hostname. */
     const char *    motd;       /* Message of the day. */
     uint32_t        nUsers;     /* Number of currently registered users online. */
@@ -31,5 +32,16 @@ typedef struct server_s {
  * @param conf A pointer to the config_s struct to configure the server with.
  */
 void start_server(const struct config_s conf[static 1]);
+
+
+/**
+ * Creates a channel with the specified name and with the specified client as its operator.
+ * Adds the newly created channel to the hash map of channels.
+ * @param name The name of the newly created channel. This will be converted to lowercase, so it should not
+ * point to a string literal.
+ * @param operator The client who will become operator of the new channel.
+ * @return 0 on success, -1 on failure
+ */
+int server_create_channel(char *name, struct client_s *operator);
 
 #endif

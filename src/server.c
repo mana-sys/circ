@@ -24,7 +24,7 @@ server_s server;
 static int id = 1;
 
 
-static void nicknames_hash_key_destroy_func(gpointer data);
+static void string_key_destroy_func(gpointer data);
 
 void start_server(const struct config_s conf[static 1])
 {
@@ -42,8 +42,12 @@ void start_server(const struct config_s conf[static 1])
      * Initialize server data structures.
      */
     server.nicks = g_hash_table_new_full((GHashFunc) g_str_hash, (GEqualFunc) g_str_equal,
-                                         nicknames_hash_key_destroy_func, NULL);
+            string_key_destroy_func, NULL);
+
     server.clients = g_hash_table_new(g_direct_hash, g_direct_equal);
+
+    server.channels = g_hash_table_new_full((GHashFunc) g_str_hash, (GEqualFunc) g_str_equal,
+            string_key_destroy_func, NULL);
 
     /*
      * Get MOTD and hostname.
@@ -74,7 +78,9 @@ void start_server(const struct config_s conf[static 1])
     }
 }
 
-static void nicknames_hash_key_destroy_func(gpointer data)
+
+//int server_create_channel()
+static void string_key_destroy_func(gpointer data)
 {
     g_free(data);
 }

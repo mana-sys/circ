@@ -13,7 +13,8 @@ enum irc_message_type {
     PONG,
     MOTD,
     LUSERS,
-    WHOIS
+    WHOIS,
+    JOIN
 };
 
 struct irc_message_nick {
@@ -40,6 +41,12 @@ struct irc_message_whois {
     char *mask;
 };
 
+struct irc_message_join {
+    char *channels;
+    char *keys;
+    int leave_all;
+};
+
 typedef struct irc_message {
     enum irc_message_type type;
     char *command;
@@ -50,6 +57,7 @@ typedef struct irc_message {
         struct irc_message_privmsg privmsg;
         struct irc_message_lusers lusers;
         struct irc_message_whois whois;
+        struct irc_message_join join;
     } message;
 } irc_message_s;
 

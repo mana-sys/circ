@@ -1,6 +1,7 @@
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 set(CIRC_SRC
+        channel.c
         circ.c
         client.c
         config.c

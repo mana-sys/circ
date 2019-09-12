@@ -1,36 +1,74 @@
-//
-// Created by mana on 8/12/19.
-//
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <sys/un.h>
+#include <ctype.h>
 
 #include "channel.h"
+#include "client.h"
 
-struct circ_channel_s *circ_channel_new(const char *name)
+#define INVALID_CHARSET "\x07\r\n,"
+
+channel_s *channel_new(const char *name, client_s *operator)
 {
-    struct circ_channel_s *chan;
-    struct sockaddr_un addr;
+    channel_s *channel;
 
-    chan = calloc(1, sizeof(struct circ_channel_s));
-    strncpy(chan->name, name, CHANNEL_NAME_MAX);
+    channel = calloc(1, sizeof(channel_s));
+    strncpy(channel->name, name, CHANNEL_NAME_MAX);
 
-    chan->fd = socket(AF_UNIX, SOCK_DGRAM, 0);
-    if (chan->fd == -1)
-        goto err;
+    /*
+     * Initialize channel data structures.
+     */
+    channel->members      = g_hash_table_new(g_direct_hash, g_direct_equal);
+    channel->member_modes = g_hash_table_new(g_direct_hash, g_direct_equal);
 
-    memset(&addr, 0, sizeof(struct sockaddr_un));
-    addr.sun_family = AF_UNIX;
-    strncpy(&addr.sun_path[1], chan->name, sizeof(addr.sun_path) - 2);
+    /*
+     * First member is the channel operator.
+     */
+    g_hash_table_insert(channel->members, GINT_TO_POINTER(operator->clientId), operator);
 
-    if (bind(chan->fd, (struct sockaddr *) &addr, sizeof(struct sockaddr_un)) == -1)
-        goto err;
 
-    return chan;
+    return channel;
+}
 
-    err:
-    free(chan);
-    return NULL;
 
+int channel_verify_name(const char *name)
+{
+    int colon_occurences;
+    size_t len;
+
+    /*
+     * Channel name up to fifty (50) characters.
+     */
+    if ((len = strlen(name)) > CHANNEL_NAME_MAX)
+        return -1;
+
+    /*
+     * First character is '&', '#', '+', or '!'
+     */
+    switch (name[0]) {
+        case '&':
+        case '#':
+        case '+':
+        case '!':
+            break;
+        default:
+            return -1;
+    }
+
+    /*
+     * Does not contain ^G, CR, LF, or ','.
+     */
+    if (strcspn(name, INVALID_CHARSET) != len)
+        return -1;
+
+    /*
+     * TODO: At most one colon as channel mask delimiter.
+     */
+
+    return 0;
+}
+
+
+int channel_join(channel_s *channel, struct client_s *client)
+{
+    g_hash_table_insert(channel->members, GINT_TO_POINTER(client->clientId), client);
+
+    return 0;
 }

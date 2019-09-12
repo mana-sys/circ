@@ -17,6 +17,7 @@ add_test(NAME unit_test_hashtable COMMAND test_hashtable)
 add_test(NAME unit_test_handlers COMMAND test_handlers)
 add_test(NAME unit_test_read_message1 COMMAND test_read_message1)
 add_test(NAME unit_test_motd COMMAND test_motd)
+add_test(NAME unit_test_channel COMMAND test_channel)
 
 add_test(NAME integration_test_register
         COMMAND pytest --circ $<TARGET_FILE:circ>

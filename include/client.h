@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "channel.h"
 #include "connection.h"
 #include "irc_constants.h"
 #include "server.h"
@@ -102,5 +103,18 @@ int Server_TrySend (server_s *server, client_s *from_client, const char *nick, c
  * @return
  */
 int client_change_nick(client_s *client, char *message);
+
+
+/**
+ * Try to join the client to the channel with the specified name on the given
+ * server. If the channel doesn't yet exist, then it will be created, with the
+ * client added as its operator.
+ *
+ * @param client The client to join.
+ * @param server The server containing the channel to be joined to.
+ * @param name The name of the channel to be joined to.
+ * @return
+ */
+int client_join_channel(client_s *client, server_s *server, char *name);
 
 #endif //CIRC_CLIENT_H

@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <irc.h>
 #include <unistd.h>
 #include <netinet/in.h>
@@ -244,6 +245,59 @@ int Client_TryEmptyBuffer(client_s *client)
 
         free(response);
     }
+
+    return 0;
+}
+
+
+int client_join_channel(client_s *client, server_s *server, char *name)
+{
+
+    char *c;
+    channel_s *channel;
+
+    /*
+     * Lowercase the channel name.
+     */
+    for (c = name; *c != '\0'; c++)
+    {
+        *c = (char) tolower((int) *c);
+    }
+
+    /*
+     * Verify the channel name. If the channel name is invalid, send ERR_NOSUCHCHANNEL.
+     */
+    if (channel_verify_name(name) == -1) {
+
+        /*
+         * TODO: Send ERR_NOSUCHCHANNEL
+         */
+        return -1;
+    }
+
+    /*
+     * Check if channel with the name exists on the server.
+     */
+    channel = g_hash_table_lookup(server->channels, name);
+
+    /*
+     * If the channel exists, join the client to that channel.
+     */
+    if (channel)
+        return channel_join(channel, client);
+
+    /*
+     * If the channel doesn't exist, then create the channel.
+     */
+    channel = channel_new(name, client);
+
+    g_hash_table_insert(server->channels, g_strdup(name), channel);
+
+    return 0;
+
+
+
+
 
     return 0;
 }

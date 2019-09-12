@@ -196,6 +196,29 @@ static void TestParser_LUsers()
     expect_message_type(LUSERS);
 }
 
+static void TestParser_Join()
+{
+    char message[] = "JOIN channel\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(JOIN);
+    expect_message_parse_error_none();
+
+    TEST_ASSERT_EQUAL_STRING("channel", parsed.message.join.channels);
+}
+
+
+static void TestParser_JoinNeedMoreParams()
+{
+    char message[] = "JOIN\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(JOIN);
+    expect_message_parse_error(ERR_NEEDMOREPARAMS);
+}
+
 
 int main() {
     UnityBegin("test_parser.c");
@@ -225,6 +248,9 @@ int main() {
     RUN_TEST(TestParser_PrivmsgNoTextToSend);
 
     RUN_TEST(TestParser_LUsers);
+
+    RUN_TEST(TestParser_Join);
+    RUN_TEST(TestParser_JoinNeedMoreParams);
 
     return UnityEnd();
 }

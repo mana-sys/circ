@@ -16,6 +16,7 @@ static int parse_message_privmsg (struct irc_message *message, char *saveptr);
 static int parse_message_motd    (struct irc_message *message, char *saveptr);
 static int parse_message_lusers  (struct irc_message *message, char *saveptr);
 static int parse_message_whois   (struct irc_message *message, char *saveptr);
+static int parse_message_join    (irc_message_s *message, char *saveptr);
 
 
 int parse_message(char *buf, struct irc_message *message)
@@ -42,6 +43,8 @@ int parse_message(char *buf, struct irc_message *message)
             return parse_message_lusers(message, saveptr);
         } else if (strcmp(tok, "WHOIS") == 0) {
             return parse_message_whois(message, saveptr);
+        } else if (strcmp(tok, "JOIN") == 0) {
+            return parse_message_join(message, saveptr);
         } else {
             message->type = UNKNOWN;
             return 0;
@@ -202,4 +205,30 @@ static int parse_message_whois(struct irc_message *message, char *saveptr)
     message->message.whois.mask = msgtok_r(NULL, &toklen, &saveptr);
 
     return 0;
+}
+
+
+static int parse_message_join(irc_message_s *message, char *saveptr)
+{
+    size_t toklen;
+    char *tok;
+
+    message->type = JOIN;
+
+    // Parse the list of channels.
+    tok = msgtok_r(NULL, &toklen, &saveptr);
+
+    if (tok == NULL || toklen == 0) {
+        message->parse_err = ERR_NEEDMOREPARAMS;
+        return ERR_NEEDMOREPARAMS;
+    }
+
+    if (strcmp(tok, "0") == 0) {
+        message->message.join.leave_all = 1;
+        return 0;
+    }
+
+    message->message.join.channels = tok;
+    return 0;
+
 }
