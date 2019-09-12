@@ -222,7 +222,7 @@ void Server_HandleReadEvent(void *instance)
     handler.handle_read = Client_HandleReadEvent;
     handler.handle_write = NULL;
 
-    if (Reactor_RegisterHandler(&handler) == -1) {
+    if (reactor_register_handler(&handler) == -1) {
         Log_Error("Failed to register handler for client =%d", client->clientId);
         goto error;
     }

@@ -36,7 +36,7 @@ typedef struct {
 /**
  * Initializes the reactor singleton.
  */
-void Reactor_Init();
+void reactor_init();
 
 
 /**
@@ -48,7 +48,7 @@ void Reactor_Init();
  * @param handler The handler to register.
  * @return 0 on success, -1 on failure.
  */
-int Reactor_RegisterHandler(reactor_event_handler_s *handler);
+int reactor_register_handler(reactor_event_handler_s *handler);
 
 
 /**
@@ -58,7 +58,7 @@ int Reactor_RegisterHandler(reactor_event_handler_s *handler);
  * @param handler The handler for which to change the registration.
  * @return 0 on success, -1 on failure.
  */
-int Reactor_ChangeRegistration(reactor_event_handler_s *handler);
+int reactor_change_registration(reactor_event_handler_s *handler);
 
 
 /**
@@ -67,12 +67,12 @@ int Reactor_ChangeRegistration(reactor_event_handler_s *handler);
  * @param handler The handler to unregister.
  * @return 0 on success, -1 on failure.
  */
-int Reactor_UnregisterHandler(reactor_event_handler_s *handler);
+int reactor_unregister_handler(reactor_event_handler_s *handler);
 
 
 /**
  * Retrieves events from epoll and dispatches them to their corresponding event handlers.
  */
-void Reactor_HandleEvents();
+void reactor_handle_events();
 
 #endif //CIRC_REACTOR_H

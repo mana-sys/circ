@@ -18,17 +18,17 @@ static int epfd;
 static struct epoll_event events[REACTOR_MAX_EVENTS];
 
 
-static void Reactor_ConfigureEvents(struct epoll_event *event, reactor_event_handler_s *handler);
+static void reactor_configure_events(struct epoll_event *event, reactor_event_handler_s *handler);
 
 
-void Reactor_Init()
+void reactor_init()
 {
     if ((epfd = epoll_create1(0)) == -1)
         logExitErr("Fatal error: epoll_create1()");
 }
 
 
-int Reactor_RegisterHandler(reactor_event_handler_s *handler)
+int reactor_register_handler(reactor_event_handler_s *handler)
 {
     reactor_event_handler_s *copy;
     struct epoll_event event;
@@ -51,7 +51,7 @@ int Reactor_RegisterHandler(reactor_event_handler_s *handler)
 //    if (copy->handle_read) {
 //        event.events = EPOLLIN | EPOLLERR;
 //    }
-    Reactor_ConfigureEvents(&event, copy);
+    reactor_configure_events(&event, copy);
 //    event.events = EPOLLIN | EPOLLERR;
     event.data.ptr = copy;
 
@@ -70,7 +70,7 @@ int Reactor_RegisterHandler(reactor_event_handler_s *handler)
 }
 
 
-int Reactor_ChangeRegistration(reactor_event_handler_s *handler)
+int reactor_change_registration(reactor_event_handler_s *handler)
 {
     struct epoll_event event;
 
@@ -79,7 +79,7 @@ int Reactor_ChangeRegistration(reactor_event_handler_s *handler)
     /*
      * Configure epoll event struct.
      */
-    Reactor_ConfigureEvents(&event, handler);
+    reactor_configure_events(&event, handler);
     event.data.ptr = handler;
 
     return epoll_ctl(epfd, EPOLL_CTL_MOD, handler->fd, &event);
@@ -98,7 +98,7 @@ int Reactor_UnregisterHandler(reactor_event_handler_s *handler)
 }
 
 
-void Reactor_HandleEvents()
+void reactor_handle_events()
 {
     int ready, j;
     reactor_event_handler_s *handler;
@@ -131,7 +131,7 @@ void Reactor_HandleEvents()
 }
 
 
-static void Reactor_ConfigureEvents(struct epoll_event *event, reactor_event_handler_s *handler)
+static void reactor_configure_events(struct epoll_event *event, reactor_event_handler_s *handler)
 {
     /*
      * Configure read events.

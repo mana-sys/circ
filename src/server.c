@@ -61,8 +61,8 @@ void start_server(const struct config_s conf[static 1])
                                                .handle_read = Server_HandleReadEvent,
                                                .handle_write = NULL};
 
-    Reactor_Init();
-    Reactor_RegisterHandler(&serverHandler);
+    reactor_init();
+    reactor_register_handler(&serverHandler);
 
     circlog(L_INFO, "Hostname: %s", server.hostname);
     circlog(L_INFO, "Message of the day:");
@@ -70,7 +70,7 @@ void start_server(const struct config_s conf[static 1])
     circlog(L_DEBUG, "Listening on %s:%u", conf->host, conf->port);
 
     for (;;) {
-        Reactor_HandleEvents();
+        reactor_handle_events();
     }
 }
 
