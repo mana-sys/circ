@@ -31,6 +31,14 @@
 #define FMT_RPL_WHOISSERVER         "312 %s %s %s :%s\r\n"
 #define FMT_RPL_ENDOFWHOIS          "318 %s %s :End of WHOIS list\r\n"
 
+
+/*
+ * JOIN replies.
+ */
+#define FMT_MSG_JOIN                ":%s!%s@%s JOIN %s\r\n"
+#define FMT_RPL_TOPIC               ":%s 332 %s %s :%s\r\n"
+#define FMT_RPL_ENDOFNAMES          ":%s 366 %s %s :End of NAMES list\r\n"
+
 #define STR_ERR_NOSUCHNICK          ":No such nick/channel"
 #define STR_ERR_NOMOTD              ":MOTD File is missing"
 #define STR_ERR_NONICKNAMEGIVEN     ":No nickname given"
@@ -73,6 +81,13 @@ int Reply_RplWhoIsUser   (client_s *client, client_s *queried, char response[sta
 int Reply_RplWhoIsServer (client_s *client, client_s *queried, char response[static IRC_MSG_SIZE]);
 int Reply_RplEndOfWhoIs  (client_s *client, client_s *queried, char response[static IRC_MSG_SIZE]);
 
+
+/*
+ * JOIN replies.
+ */
+int Reply_RplTopic(client_s *client, server_s *server, channel_s *channel, char response[static IRC_MSG_SIZE]);
+int Reply_RplEndOfNames(client_s *client, server_s *server, channel_s *channel, char response[static IRC_MSG_SIZE]);
+
 int Reply_ErrNoNicknameGiven   (client_s *, char *);
 int Reply_ErrNicknameInUse     (client_s *, const char *, char *);
 int Reply_ErrNeedMoreParams    (client_s *, const char *, char *);
@@ -81,6 +96,11 @@ int Reply_ErrAlreadyRegistered (client_s *, char *);
 int Reply_ErrUnknownCommand    (client_s *, const char *, char *);
 int Reply_Pong                 (const char *, char *);
 
-int Message_Privmsg(client_s *, const char *, const char *, char *);
+
+
+
+int Message_Privmsg(client_s *, const char *msgtarget, const char *contents, char *response);
+int Format_MessageJoin(const client_s *client, const char *channel, char *response);
+
 
 #endif

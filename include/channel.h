@@ -7,13 +7,16 @@
 
 #include <glib.h>
 
+#include "response.h"
 
 #define CHANNEL_NAME_MAX 50
+#define CHANNEL_TOPIC_MAX 255
 
 struct client_s;
 
 typedef struct channel_s {
     char            name[CHANNEL_NAME_MAX + 1];     /* The name of the channel */
+    char            topic[CHANNEL_TOPIC_MAX + 1];   /* The topic of the channel */
     GHashTable *    members;                        /* Members of the channel (hash from client ID to client pointer */
     GHashTable *    member_modes;                   /* Modes of the channel members (hash from client ID to mode */
 } channel_s;
@@ -38,7 +41,6 @@ channel_s *channel_new(const char *name, struct client_s *operator);
 channel_s *channel_free(channel_s *channel);
 
 
-
 /**
  * Joins the specified client to the channel, if permitted.
  *
@@ -50,11 +52,39 @@ int channel_join(channel_s *channel, struct client_s *client);
 
 
 /**
+ * Sends the message to the specified channel. The message will be forwarded
+ * to all members of the channel, except for the client identified by source.
+ * If source is less than 0, then the message will be forwarded to all members of the
+ * channel, including the client identified by source.
+ *
+ * @param channel The channel to send the message to.
+ * @param response The message to send.
+ */
+int channel_send_message(channel_s *channel, response_s *message, int source);
+
+
+/**
+ *
+ */
+int channel_sendall_join(channel_s *channel, struct client_s *source);
+
+
+/**
  * Verifies the validity of the given channel name.
  * @param name The name to test.
  * @return 0 if the name is valid, -1 if not.
  */
 int channel_verify_name(const char *name);
+
+
+/**
+ *
+ * @param channel
+ * @param source
+ * @param contents
+ * @return
+ */
+int channel_sendall_privmsg(channel_s *channel, struct client_s *source, const char *contents);
 
 
 #endif //CIRC_CHANNEL_H

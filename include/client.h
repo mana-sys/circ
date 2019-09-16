@@ -8,6 +8,7 @@
 #include "channel.h"
 #include "connection.h"
 #include "irc_constants.h"
+#include "response.h"
 #include "server.h"
 
 
@@ -26,14 +27,7 @@ typedef struct client_s {
 } client_s;
 
 
-/*
- * Structure to represent a response message, consisting of the response
- * body and its length.
- */
-typedef struct response_s {
-    char    response[IRC_MSG_SIZE];
-    size_t  len;
-} response_s;
+typedef int client_id_t;
 
 
 /**

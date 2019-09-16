@@ -31,6 +31,7 @@ static int Handler_Motd    (client_s *, server_s *, irc_message_s *, GQueue *);
 static int Handler_Privmsg (client_s *, server_s *, irc_message_s *, GQueue *);
 static int Handler_LUsers  (client_s *, server_s *, irc_message_s *, GQueue *);
 static int Handler_WhoIs   (client_s *, server_s *, irc_message_s *, GQueue *);
+static int handler_join    (client_s *, server_s *, irc_message_s *, GQueue *);
 
 
 
@@ -46,6 +47,7 @@ static void Handler_Register()
     handlers2[PRIVMSG] = Handler_Privmsg;
     handlers2[LUSERS]  = Handler_LUsers;
     handlers2[WHOIS]   = Handler_WhoIs;
+    handlers2[JOIN]    = handler_join;
 }
 
 int Handler_HandleMessage (client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
@@ -173,9 +175,11 @@ static int Handler_User(client_s *client, server_s *server, irc_message_s *messa
 
 static int Handler_Privmsg    (client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
 {
-    int targetId;
-    response_s *response;
-    client_s *target;
+    int             targetId;
+    char            first;
+    channel_s *     channel;
+    response_s *    response;
+    client_s *      target;
 
     circlog(L_DEBUG, "Handling PRIVMSG");
 
@@ -199,25 +203,41 @@ static int Handler_Privmsg    (client_s *client, server_s *server, irc_message_s
         return -1;
     }
 
-    targetId = GPOINTER_TO_INT(g_hash_table_lookup(server->nicks, message->message.privmsg.msgtarget));
-    if (targetId == 0) {
-        circlog(L_DEBUG, "Nick not found; sending ERR_NOSUCHNICK");
+
+    first = message->message.privmsg.msgtarget[0];
+    if ((first == '#') || (first == '+') || (first == '!') || (first == '&')) {
+
+        channel = g_hash_table_lookup(server->channels, message->message.privmsg.msgtarget);
+        if (channel) {
+
+            circlog(L_DEBUG, "Sending to channel %s", message->message.privmsg.msgtarget);
+
+            channel_sendall_privmsg(channel, client, message->message.privmsg.contents);
+        }
+
+    } else {
+
+
+        targetId = GPOINTER_TO_INT(g_hash_table_lookup(server->nicks, message->message.privmsg.msgtarget));
+        if (targetId == 0) {
+            circlog(L_DEBUG, "Nick not found; sending ERR_NOSUCHNICK");
+
+            response = calloc(1, sizeof(response_s));
+            response->len = Reply_ErrNoSuchNick(client, message->message.privmsg.msgtarget, response->response);
+
+            g_queue_push_tail(responses, response);
+
+            return -1;
+        }
+
+        target = g_hash_table_lookup(server->clients, GINT_TO_POINTER(targetId));
 
         response = calloc(1, sizeof(response_s));
-        response->len = Reply_ErrNoSuchNick(client, message->message.privmsg.msgtarget, response->response);
+        response->len = Message_Privmsg(client, message->message.privmsg.msgtarget, message->message.privmsg.contents,
+                                        response->response);
 
-        g_queue_push_tail(responses, response);
-
-        return -1;
+        Client_Send(target, response);
     }
-
-    target = g_hash_table_lookup(server->clients, GINT_TO_POINTER(targetId));
-
-    response = calloc(1, sizeof(response_s));
-    response->len = Message_Privmsg(client, message->message.privmsg.msgtarget, message->message.privmsg.contents,
-            response->response);
-
-    Client_Send(target, response);
 
     return 0;
 }
@@ -335,6 +355,60 @@ static int Handler_WhoIs(client_s *client, server_s *server, irc_message_s *mess
     push_reply(responses, Reply_RplWhoIsUser, client, queried);
     push_reply(responses, Reply_RplWhoIsServer, client, queried);
     push_reply(responses, Reply_RplEndOfWhoIs, client, queried);
+
+    return 0;
+}
+
+
+static int handler_join(client_s * client, server_s * server, irc_message_s * message, GQueue *responses)
+{
+    char *      channel_name;
+    channel_s * channel;
+
+    circlog(L_DEBUG, "Handling JOIN message.");
+
+    /*
+     * Check for ERR_NEEDMOREPARAMS.
+     */
+    if (message->parse_err == ERR_NEEDMOREPARAMS) {
+        push_reply(responses, Reply_ErrNeedMoreParams, client, "JOIN");
+        return -1;
+    }
+
+    channel_name = message->message.join.channels;
+
+    /*
+     * Check for the channel's existence.
+     */
+    channel = server_get_channel(server, channel_name);
+
+    /*
+     * If the channel does not exist, create it with the current client as the
+     * channel operator. Else, add the client to the found channel.
+     */
+    if (channel == NULL) {
+
+        channel = server_create_channel(server, channel_name, client);
+
+        circlog(L_INFO, "client =%d (nick =%s) has created a new channel =%s", client->clientId,
+                client->username, channel_name);
+    } else {
+
+        circlog(L_DEBUG, "client %d (nick= %s) has joined channel =%s",
+                client->clientId, client->nickname, channel->name);
+
+        channel_join(channel, client);
+    }
+
+    push_reply(responses, Format_MessageJoin, client, channel->name);
+
+    if (strlen(channel->topic)) {
+        push_reply(responses, Reply_RplTopic, client, server, channel);
+    }
+
+    push_reply(responses, Reply_RplEndOfNames, client, server, channel);
+
+
 
     return 0;
 }

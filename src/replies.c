@@ -163,3 +163,24 @@ int Message_Privmsg(client_s *client, const char *msgtarget, const char *content
     return sprintf(response, FMT_MSG_PRIVMSG, client->nickname, client->username, client->hostname,
             msgtarget, contents);
 }
+
+
+int Format_MessageJoin(const client_s *client, const char *channel, char *response)
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_MSG_JOIN, client->nickname, client->username,
+            client->hostname, channel);
+}
+
+
+int Reply_RplTopic(client_s *client, server_s *server, channel_s *channel, char response[static IRC_MSG_SIZE])
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_TOPIC, server->hostname, client->nickname,
+            channel->name, channel->topic);
+}
+
+
+int Reply_RplEndOfNames(client_s *client, server_s *server, channel_s *channel, char response[static IRC_MSG_SIZE])
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_ENDOFNAMES, server->hostname, client->nickname,
+            channel->name);
+}

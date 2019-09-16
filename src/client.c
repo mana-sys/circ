@@ -18,7 +18,6 @@ void Client_TryRegister (client_s *client, server_s *server, response_s **respon
 
     if (!client->registered && client->receivedUser && client->receivedNick) {
 
-        circlog(L_INFO, "Client successfully completed registration; sending RPL_WELCOME.");
 
         *response = calloc(1, sizeof(response_s));
 
@@ -30,6 +29,9 @@ void Client_TryRegister (client_s *client, server_s *server, response_s **respon
         client->server->nUnknown--;
         client->server->nUsers++;
         (*response)->len = Reply_RplWelcome(client, (*response)->response);
+
+        circlog(L_INFO, "client =%d successfully registered with nick =%s", client->clientId, client->nickname);
+
         return;
     }
 
@@ -113,6 +115,8 @@ int Client_HandleRead(client_s * client)
      */
     if ((numRead = Conn_ReadStoreBuffer(conn)) == -1)
         return -1;
+
+    memset(conn->message, 0, sizeof(irc_message_s));
 
     /*
      * Handle all messages within the store buffer.
@@ -207,7 +211,7 @@ void Server_HandleReadEvent(void *instance)
     /*
      * Fill the fields of the client struct.
      */
-    client->clientId = server->idCounter++;
+    client->clientId = server_generate_id(server);
     client->conn.responses = g_queue_new();
     client->server = server;
     getnameinfo((struct sockaddr *) &addr, len, client->hostname, IRC_HOSTNAME_MAX, NULL, 0, 0);

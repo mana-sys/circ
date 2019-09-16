@@ -1,7 +1,10 @@
 #include <ctype.h>
+#include <log.h>
+#include <stdio.h>
 
 #include "channel.h"
 #include "client.h"
+#include "replies.h"
 
 #define INVALID_CHARSET "\x07\r\n,"
 
@@ -68,7 +71,63 @@ int channel_verify_name(const char *name)
 
 int channel_join(channel_s *channel, struct client_s *client)
 {
-    g_hash_table_insert(channel->members, GINT_TO_POINTER(client->clientId), client);
+    if (g_hash_table_lookup(channel->members, GINT_TO_POINTER(client->clientId))) {
+        circlog(L_DEBUG, "Client ID =%d is already part of channel %s", client->clientId, channel->name);
+    } else {
+        g_hash_table_insert(channel->members, GINT_TO_POINTER(client->clientId), client);
+        channel_sendall_join(channel, client);
+    }
+
+    return 0;
+}
+
+
+int channel_send_message(channel_s *channel, response_s *message, int source)
+{
+    GHashTableIter  iter;
+    gpointer        key;
+    client_s *      client;
+    response_s *    copy;
+
+    g_hash_table_iter_init(&iter, channel->members);
+
+    while (g_hash_table_iter_next (&iter, &key, (gpointer) &client)) {
+
+        if (GPOINTER_TO_INT(key) != source) {
+            circlog(L_DEBUG, "Forwarding '%s' to client =%d", message->response, client->clientId);
+
+            copy = calloc(1, sizeof(response_s));
+            memcpy(copy, message, sizeof(response_s));
+
+            Client_Send(client, copy);
+        }
+    }
+
+    return 0;
+}
+
+
+int channel_sendall_join(channel_s *channel, client_s *source)
+{
+    response_s response;
+
+    memset(&response, 0, sizeof(response_s));
+    response.len = Format_MessageJoin(source, channel->name, response.response);
+
+    channel_send_message(channel, &response, source->clientId);
+
+    return 0;
+}
+
+
+int channel_sendall_privmsg(channel_s *channel, client_s *source, const char *contents)
+{
+    response_s response;
+
+    memset(&response, 0, sizeof(response_s));
+    response.len = Message_Privmsg(source, channel->name, contents, response.response);
+
+    channel_send_message(channel, &response, source->clientId);
 
     return 0;
 }

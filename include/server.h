@@ -3,6 +3,7 @@
 
 #include <glib.h>
 
+#include "channel.h"
 #include "config.h"
 
 struct client_s;
@@ -34,6 +35,19 @@ typedef struct server_s {
 void start_server(const struct config_s conf[static 1]);
 
 
+int server_generate_id(server_s *server);
+
+
+/**
+ * Gets the channel with the specified name.
+ *
+ * @param name The name of the channel to get. This will be converted to lowercase, so it should not
+ * point to a string literal.
+ * @return Pointer to the corresponding channel struct, on success. NULL if the channel does not exist.
+ */
+channel_s * server_get_channel(server_s *server, char *name);
+
+
 /**
  * Creates a channel with the specified name and with the specified client as its operator.
  * Adds the newly created channel to the hash map of channels.
@@ -42,6 +56,6 @@ void start_server(const struct config_s conf[static 1]);
  * @param operator The client who will become operator of the new channel.
  * @return 0 on success, -1 on failure
  */
-int server_create_channel(char *name, struct client_s *operator);
+channel_s * server_create_channel(server_s *server, char *name, struct client_s *operator);
 
 #endif

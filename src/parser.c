@@ -229,6 +229,7 @@ static int parse_message_join(irc_message_s *message, char *saveptr)
     }
 
     message->message.join.channels = tok;
+    message->parse_err = 0;
     return 0;
 
 }
