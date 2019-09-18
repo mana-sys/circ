@@ -1,0 +1,6 @@
+language: c
+os: linux
+compiler: gcc
+
+script:
+  - echo "Building would be done here."
