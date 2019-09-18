@@ -37,7 +37,22 @@
  */
 #define FMT_MSG_JOIN                ":%s!%s@%s JOIN %s\r\n"
 #define FMT_RPL_TOPIC               ":%s 332 %s %s :%s\r\n"
+#define FMT_RPL_NAMREPLY_PARTIAL    ":%s 353 %s %s :"
 #define FMT_RPL_ENDOFNAMES          ":%s 366 %s %s :End of NAMES list\r\n"
+
+
+/*
+ * LIST replies.
+ */
+#define FMT_RPL_LISTSTART           ":%s 321 %s Channel :Users Name\r\n"
+#define FMT_RPL_LIST                ":%s 322 %s %s %d :%s\r\n"
+#define FMT_RPL_LISTEND                 ":%s 323 %s :End of /LIST\r\n"
+
+/*
+ * Channel-related replies.
+ */
+#define FMT_ERR_NOSUCHCHANNEL       ":%s 403 %s %s :No such channel\r\n"
+#define FMT_ERR_NOTONCHANNEL        ":%s 442 %s %s :You're not on that channel\r\n"
 
 #define STR_ERR_NOSUCHNICK          ":No such nick/channel"
 #define STR_ERR_NOMOTD              ":MOTD File is missing"
@@ -86,7 +101,27 @@ int Reply_RplEndOfWhoIs  (client_s *client, client_s *queried, char response[sta
  * JOIN replies.
  */
 int Reply_RplTopic(client_s *client, server_s *server, channel_s *channel, char response[static IRC_MSG_SIZE]);
+int Reply_RplNamReply(client_s *client, server_s *server, channel_s *channel, char response[static IRC_MSG_SIZE]);
+int Reply_RplNamReplyAll(client_s *client, server_s *server, channel_s *channel, GQueue *responses);
 int Reply_RplEndOfNames(client_s *client, server_s *server, channel_s *channel, char response[static IRC_MSG_SIZE]);
+
+/*
+ * LIST replies.
+ */
+int Reply_RplListStart(client_s *client, server_s *server, char response[static IRC_MSG_SIZE]);
+int Reply_RplList(client_s *client, server_s *server, channel_s *channel, char response[static IRC_MSG_SIZE]);
+int Reply_RplListEnd(client_s *client, server_s *server, char response[static IRC_MSG_SIZE]);
+
+
+
+/*
+ * Channel-related replies.
+ */
+int Reply_ErrNoSuchChannel(client_s *client, server_s *server, const char *channel_name, char response[static IRC_MSG_SIZE]);
+int Reply_ErrNotOnChannel(client_s *client, server_s *server, channel_s *channel, char response[static IRC_MSG_SIZE]);
+
+
+
 
 int Reply_ErrNoNicknameGiven   (client_s *, char *);
 int Reply_ErrNicknameInUse     (client_s *, const char *, char *);

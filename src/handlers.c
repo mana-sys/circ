@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -32,6 +33,9 @@ static int Handler_Privmsg (client_s *, server_s *, irc_message_s *, GQueue *);
 static int Handler_LUsers  (client_s *, server_s *, irc_message_s *, GQueue *);
 static int Handler_WhoIs   (client_s *, server_s *, irc_message_s *, GQueue *);
 static int handler_join    (client_s *, server_s *, irc_message_s *, GQueue *);
+static int handler_part    (client_s *, server_s *, irc_message_s *, GQueue *);
+static int handler_list    (client_s *, server_s *, irc_message_s *, GQueue *);
+
 
 
 
@@ -48,6 +52,8 @@ static void Handler_Register()
     handlers2[LUSERS]  = Handler_LUsers;
     handlers2[WHOIS]   = Handler_WhoIs;
     handlers2[JOIN]    = handler_join;
+    handlers2[PART]    = handler_part;
+    handlers2[LIST]    = handler_list;
 }
 
 int Handler_HandleMessage (client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
@@ -406,10 +412,91 @@ static int handler_join(client_s * client, server_s * server, irc_message_s * me
         push_reply(responses, Reply_RplTopic, client, server, channel);
     }
 
+    push_reply(responses, Reply_RplNamReply, client, server, channel);
     push_reply(responses, Reply_RplEndOfNames, client, server, channel);
 
 
 
+    return 0;
+}
+
+static int handler_part    (client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
+{
+    char *      channel_name, *c;
+    channel_s * channel;
+
+    Log_Debug("Handling PART message.");
+
+    /*
+     * Convert channel name to lowercase.
+     * TODO: Support comma-delimited list of channels.
+     */
+    channel_name = message->message.part.channels;
+    for (c = channel_name; *c; c++) {
+        *c = (char) tolower((int) *c);
+    }
+
+    /*
+     * Check for channel existence; if not found, send ERR_NOSUCHCHANNEL.
+     */
+    if ((channel = server_get_channel(server, channel_name)) == NULL) {
+        push_reply(responses, Reply_ErrNoSuchChannel, client, server, channel_name);
+        return -1;
+    }
+
+    /*
+     * Check for channel membership; if not a member, send ERR_NOTONCHANNEL.
+     */
+    if (!channel_is_member(channel, client)) {
+        push_reply(responses, Reply_ErrNotOnChannel, client, server, channel);
+        return -1;
+    }
+
+    /*
+     * Remove from the channel.
+     */
+    Log_Debug("Is leaving channel.");
+
+
+    return 0;
+}
+
+
+static int handler_list(client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
+{
+    GHashTableIter  iter;
+    gpointer        key;
+    channel_s *     channel;
+    char *          channel_name;
+    char *          saveptr;
+
+
+    push_reply(responses, Reply_RplListStart, client, server);
+
+    printf("%p", message->message.list.channels);
+
+    if (message->message.list.channels == 0) {
+        g_hash_table_iter_init(&iter, server->channels);
+
+        while (g_hash_table_iter_next(&iter, &key, (gpointer *) &channel)) {
+            push_reply(responses, Reply_RplList, client, server, channel);
+        }
+    } else {
+
+        channel_name = strtok_r(message->message.list.channels, ",", &saveptr);
+
+        while (channel_name != NULL) {
+
+            if ((channel = server_get_channel(server, channel_name))) {
+                push_reply(responses, Reply_RplList, client, server, channel);
+            }
+
+            channel_name = strtok_r(NULL, ",", &saveptr);
+        }
+
+    }
+
+    push_reply(responses, Reply_RplListEnd, client, server);
     return 0;
 }
 

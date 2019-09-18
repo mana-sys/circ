@@ -17,6 +17,8 @@ static int parse_message_motd    (struct irc_message *message, char *saveptr);
 static int parse_message_lusers  (struct irc_message *message, char *saveptr);
 static int parse_message_whois   (struct irc_message *message, char *saveptr);
 static int parse_message_join    (irc_message_s *message, char *saveptr);
+static int parse_message_part    (irc_message_s *message, char *saveptr);
+static int parse_message_list    (irc_message_s *message, char *saveptr);
 
 
 int parse_message(char *buf, struct irc_message *message)
@@ -45,6 +47,10 @@ int parse_message(char *buf, struct irc_message *message)
             return parse_message_whois(message, saveptr);
         } else if (strcmp(tok, "JOIN") == 0) {
             return parse_message_join(message, saveptr);
+        } else if (strcmp(tok, "PART") == 0) {
+            return parse_message_part(message, saveptr);
+        } else if (strcmp(tok, "LIST") == 0) {
+            return parse_message_list(message, saveptr);
         } else {
             message->type = UNKNOWN;
             return 0;
@@ -232,4 +238,50 @@ static int parse_message_join(irc_message_s *message, char *saveptr)
     message->parse_err = 0;
     return 0;
 
+}
+
+
+static int parse_message_part(irc_message_s *message, char *saveptr)
+{
+    size_t toklen;
+    char * tok;
+
+    message->type = PART;
+
+    tok = msgtok_r(NULL, &toklen, &saveptr);
+
+    if (tok == NULL || toklen == 0) {
+        message->parse_err = ERR_NEEDMOREPARAMS;
+        return ERR_NEEDMOREPARAMS;
+    }
+
+    message->message.part.channels = tok;
+    message->parse_err = 0;
+    return 0;
+}
+
+
+static int parse_message_list(irc_message_s *message, char *saveptr)
+{
+    size_t toklen;
+    char * tok;
+
+    message->type = LIST;
+
+    tok = msgtok_r(NULL, &toklen, &saveptr);
+
+    /*
+     * Parameter is optional.
+     */
+    if (tok == NULL || toklen == 0) {
+        return 0;
+    }
+
+    message->message.list.channels = tok;
+    message->parse_err = 0;
+
+    /*
+     * TODO: Add support for <server> parameter.
+     */
+    return 0;
 }

@@ -131,3 +131,25 @@ int channel_sendall_privmsg(channel_s *channel, client_s *source, const char *co
 
     return 0;
 }
+
+
+bool channel_is_member(channel_s *channel, struct client_s *client)
+{
+    if (g_hash_table_lookup(channel->members, GINT_TO_POINTER(client->clientId)) != NULL)
+        return true;
+
+    return false;
+}
+
+
+void channel_remove_member(channel_s *channel, struct client_s *client)
+{
+    g_hash_table_remove(channel->members, GINT_TO_POINTER(client->clientId));
+    g_hash_table_remove(channel->member_modes, GINT_TO_POINTER(client->clientId));
+}
+
+
+size_t channel_size(channel_s *channel)
+{
+    return (size_t) g_hash_table_size(channel->members);
+}

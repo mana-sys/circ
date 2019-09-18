@@ -26,6 +26,10 @@ def test_register(circ_server):
         s.connect(("localhost", 50002))
         s.send(b"NICK ben\r\n")
         s.send(b"USER ben * * :Ben Llanes\r\n")
+
+        resp = s.recv(512)
+        assert resp == b'001 ben :Welcome to the Internet Relay Network ben!ben@localhost\r\n'
+
         s.close()
     except socket.error as err:
         pytest.fail("Socket creation failed with error %s" % err)
@@ -39,6 +43,10 @@ def test_register_reversed(circ_server):
         s.connect(("localhost", 50002))
         s.send(b"USER ben * * :Ben Llanes\r\n")
         s.send(b"NICK ben\r\n")
+
+        resp = s.recv(512)
+        assert resp == b'001 ben :Welcome to the Internet Relay Network ben!ben@localhost\r\n'
+
         s.close()
     except socket.error as err:
         pytest.fail("Socket creation failed with error %s" % err)

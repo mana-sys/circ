@@ -220,6 +220,60 @@ static void TestParser_JoinNeedMoreParams()
 }
 
 
+static void TestParser_Part()
+{
+    char message[] = "PART #channel1,#channel2\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(PART);
+    expect_message_parse_error_none();
+
+    TEST_ASSERT_EQUAL_STRING("#channel1,#channel2", parsed.message.part.channels);
+}
+
+
+static void TestParser_PartNeedMoreParams()
+{
+    char message[] = "PART\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(PART);
+    expect_message_parse_error(ERR_NEEDMOREPARAMS);
+}
+
+
+static void TestParser_List()
+{
+    char message[] = "LIST\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(LIST);
+    expect_message_parse_error_none();
+
+    TEST_ASSERT_EQUAL_PTR(NULL, parsed.message.list.channels);
+    TEST_ASSERT_EQUAL_PTR(NULL, parsed.message.list.server);
+
+}
+
+
+static void TestParser_ListChannels()
+{
+    char message[] = "LIST #channel1,#channel2\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(LIST);
+    expect_message_parse_error_none();
+
+    TEST_ASSERT_EQUAL_STRING("#channel1,#channel2", parsed.message.list.channels);
+    TEST_ASSERT_EQUAL_PTR(NULL, parsed.message.list.server);
+}
+
+
+
 int main() {
     UnityBegin("test_parser.c");
 
@@ -249,8 +303,24 @@ int main() {
 
     RUN_TEST(TestParser_LUsers);
 
+    /*
+     * JOIN tests.
+     */
     RUN_TEST(TestParser_Join);
     RUN_TEST(TestParser_JoinNeedMoreParams);
+
+    /*
+     * PART tests.
+     */
+    RUN_TEST(TestParser_Part);
+    RUN_TEST(TestParser_PartNeedMoreParams);
+
+    /*
+     * LIST tests.
+     */
+    RUN_TEST(TestParser_List);
+    RUN_TEST(TestParser_ListChannels);
+
 
     return UnityEnd();
 }

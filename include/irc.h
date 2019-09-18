@@ -14,7 +14,10 @@ enum irc_message_type {
     MOTD,
     LUSERS,
     WHOIS,
-    JOIN
+    JOIN,
+    PART,
+    TOPIC,
+    LIST
 };
 
 struct irc_message_nick {
@@ -42,23 +45,34 @@ struct irc_message_whois {
 };
 
 struct irc_message_join {
-    char *channels;
-    char *keys;
-    int leave_all;
+    char *  channels;   /* Comma-delimited list of channels. */
+    char *  keys;
+    int     leave_all;
+};
+
+struct irc_message_part {
+    char *channels; /* Comma-delimited list of channels. */
+};
+
+struct irc_message_list {
+    char *channels; /* Comma-delimited list of channels. */
+    char *server;
 };
 
 typedef struct irc_message {
-    enum irc_message_type type;
-    char *command;
-    int parse_err;
+    enum irc_message_type           type;
+    char *                          command;
+    int                             parse_err;
     union {
-        struct irc_message_nick nick;
-        struct irc_message_user user;
-        struct irc_message_privmsg privmsg;
-        struct irc_message_lusers lusers;
-        struct irc_message_whois whois;
-        struct irc_message_join join;
-    } message;
+        struct irc_message_nick     nick;
+        struct irc_message_user     user;
+        struct irc_message_privmsg  privmsg;
+        struct irc_message_lusers   lusers;
+        struct irc_message_whois    whois;
+        struct irc_message_join     join;
+        struct irc_message_part     part;
+        struct irc_message_list     list;
+    }                               message;
 } irc_message_s;
 
 #endif

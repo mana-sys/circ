@@ -116,7 +116,7 @@ int Client_HandleRead(client_s * client)
     if ((numRead = Conn_ReadStoreBuffer(conn)) == -1)
         return -1;
 
-    memset(conn->message, 0, sizeof(irc_message_s));
+    memset(&message, 0, sizeof(irc_message_s));
 
     /*
      * Handle all messages within the store buffer.

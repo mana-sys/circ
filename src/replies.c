@@ -184,3 +184,78 @@ int Reply_RplEndOfNames(client_s *client, server_s *server, channel_s *channel, 
     return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_ENDOFNAMES, server->hostname, client->nickname,
             channel->name);
 }
+
+
+int Reply_ErrNoSuchChannel(client_s *client, server_s *server, const char *channel_name, char response[static IRC_MSG_SIZE])
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_ERR_NOSUCHCHANNEL, server->hostname, client->nickname,
+            channel_name);
+}
+
+
+int Reply_ErrNotOnChannel(client_s *client, server_s *server, channel_s *channel, char response[static IRC_MSG_SIZE])
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_ERR_NOSUCHCHANNEL, server->hostname, client->nickname,
+                    channel->name);
+}
+
+
+
+/*
+ * TODO: Split RPL_NAMREPLY into 15 nicknames each reply.
+ */
+/**
+ *
+ * TODO:
+ *
+ * @param client
+ * @param server
+ * @param channel
+ * @param response
+ * @return
+ */
+int Reply_RplNamReply(client_s *client, server_s *server, channel_s *channel, char response[static IRC_MSG_SIZE])
+{
+    int             first;
+    size_t          n_members;
+    GHashTableIter  iter;
+    gpointer        key;
+    client_s *      member;
+    char *          offset;
+
+    g_hash_table_iter_init(&iter, channel->members);
+
+    offset = response;
+    offset += sprintf(offset, FMT_RPL_NAMREPLY_PARTIAL, server->hostname, client->nickname, channel->name);
+
+    first = 1;
+
+    while (g_hash_table_iter_next(&iter, &key, (gpointer *) &client)) {
+        offset += sprintf(offset, first ? "%s" : " %s", client->nickname);
+        first = 0;
+    }
+
+
+    offset += sprintf(offset, "\r\n");
+
+    return (int) (offset - response);
+}
+
+
+int Reply_RplListStart(client_s *client, server_s *server, char response[static IRC_MSG_SIZE])
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_LISTSTART, server->hostname, client->nickname);
+}
+
+
+int Reply_RplList(client_s *client, server_s *server, channel_s *channel, char response[static IRC_MSG_SIZE])
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_LIST, server->hostname, client->nickname,
+            channel->name, 1, *channel->topic ? channel->topic : "");
+}
+
+
+int Reply_RplListEnd(client_s *client, server_s *server, char response[static IRC_MSG_SIZE])
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_LISTEND, server->hostname, client->nickname);
+}

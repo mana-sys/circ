@@ -6,6 +6,7 @@
 #define CIRC_CHANNEL_H
 
 #include <glib.h>
+#include <stdbool.h>
 
 #include "response.h"
 
@@ -85,6 +86,32 @@ int channel_verify_name(const char *name);
  * @return
  */
 int channel_sendall_privmsg(channel_s *channel, struct client_s *source, const char *contents);
+
+
+int channel_part(channel_s *channel, struct client_s *client);
+
+
+/**
+ * Checks if the given client is a member of the channel.
+ *
+ * @param channel The channel to check membership in.
+ * @param client The client to check membership for.
+ * @return true if the client is a member, false if not.
+ */
+bool channel_is_member(channel_s *channel, struct client_s *client);
+
+
+/**
+ * Removes the specified client from the channel.
+ *
+ * @param channel The channel the operation will be performed on.
+ * @param client The client to remove.
+ */
+void channel_remove_member(channel_s *channel, struct client_s *client);
+
+
+size_t channel_size(channel_s *channel);
+
 
 
 #endif //CIRC_CHANNEL_H
