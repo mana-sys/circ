@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "unity.h"
 
 #include "read_message.h"
