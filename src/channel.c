@@ -120,6 +120,19 @@ int channel_sendall_join(channel_s *channel, client_s *source)
 }
 
 
+int channel_sendall_part(channel_s *channel, struct client_s *source, const char *part_message)
+{
+    response_s response;
+
+    memset(&response, 0, sizeof(response_s));
+    response.len = Format_MessagePart(source, channel->name, part_message, response.response);
+
+    channel_send_message(channel, &response, source->clientId);
+
+    return 0;
+}
+
+
 int channel_sendall_privmsg(channel_s *channel, client_s *source, const char *contents)
 {
     response_s response;
@@ -152,4 +165,11 @@ void channel_remove_member(channel_s *channel, struct client_s *client)
 size_t channel_size(channel_s *channel)
 {
     return (size_t) g_hash_table_size(channel->members);
+}
+
+
+void channel_set_topic(channel_s *channel, const char *topic)
+{
+    strncpy(channel->topic, topic, CHANNEL_TOPIC_MAX);
+    channel->topic[CHANNEL_TOPIC_MAX] = 0;
 }

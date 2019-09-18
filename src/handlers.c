@@ -35,6 +35,8 @@ static int Handler_WhoIs   (client_s *, server_s *, irc_message_s *, GQueue *);
 static int handler_join    (client_s *, server_s *, irc_message_s *, GQueue *);
 static int handler_part    (client_s *, server_s *, irc_message_s *, GQueue *);
 static int handler_list    (client_s *, server_s *, irc_message_s *, GQueue *);
+static int handler_topic   (client_s *, server_s *, irc_message_s *, GQueue *);
+
 
 
 
@@ -54,6 +56,7 @@ static void Handler_Register()
     handlers2[JOIN]    = handler_join;
     handlers2[PART]    = handler_part;
     handlers2[LIST]    = handler_list;
+    handlers2[TOPIC]   = handler_topic;
 }
 
 int Handler_HandleMessage (client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
@@ -420,7 +423,7 @@ static int handler_join(client_s * client, server_s * server, irc_message_s * me
     return 0;
 }
 
-static int handler_part    (client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
+static int handler_part(client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
 {
     char *      channel_name, *c;
     channel_s * channel;
@@ -456,6 +459,12 @@ static int handler_part    (client_s *client, server_s *server, irc_message_s *m
      * Remove from the channel.
      */
     Log_Debug("Is leaving channel.");
+    channel_sendall_part(channel, client, message->message.part.part_message);
+    channel_remove_member(channel, client);
+    if (channel_size(channel) == 0) {
+        Log_Info("Removing channel %s.", channel->name);
+        server_remove_channel(server, channel);
+    }
 
 
     return 0;
@@ -497,6 +506,49 @@ static int handler_list(client_s *client, server_s *server, irc_message_s *messa
     }
 
     push_reply(responses, Reply_RplListEnd, client, server);
+    return 0;
+}
+
+
+static int handler_topic(client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
+{
+    channel_s *channel;
+
+
+    if (message->parse_err == ERR_NEEDMOREPARAMS) {
+        push_reply(responses, Reply_ErrNeedMoreParams, client, "TOPIC");
+        return -1;
+    }
+
+    channel = server_get_channel(server, message->message.topic.channel);
+
+    /*
+     * If no topic was specified, then we simply return the current topic.
+     */
+    if (message->message.topic.topic == NULL) {
+
+        if (channel == NULL) {
+            /*
+             * TODO: This should be ERR_NOTONCHANNEL
+             */
+            push_reply(responses, Reply_ErrNoSuchChannel, client, server, message->message.topic.channel);
+            return -1;
+        }
+
+        if (*channel->topic) {
+            push_reply(responses, Reply_RplTopic, client, server, channel);
+            return 0;
+        }
+
+        push_reply(responses, Reply_RplNoTopic, client, server, channel);
+        return 0;
+    }
+
+    /*
+     * If a topic was specified, then replace the channel's current topic.
+     * No reply message is sent.
+     */
+    channel_set_topic(channel, message->message.topic.topic);
     return 0;
 }
 

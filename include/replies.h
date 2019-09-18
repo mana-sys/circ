@@ -22,6 +22,7 @@
 #define FMT_ERR_NOTEXTTOSEND        "%d %s :No text to send\r\n"
 
 #define FMT_MSG_PRIVMSG             "%s!%s@%s PRIVMSG %s :%s\r\n"
+#define FMT_MSG_PART                "%s!%s@%s PART %s :%s\r\n"
 
 
 /*
@@ -33,10 +34,15 @@
 
 
 /*
+ * TOPIC replies.
+ */
+#define FMT_RPL_TOPIC               ":%s 332 %s %s :%s\r\n"
+#define FMT_RPL_NOTOPIC             ":%s 331 %s %s :No topic is set\r\n"
+
+/*
  * JOIN replies.
  */
 #define FMT_MSG_JOIN                ":%s!%s@%s JOIN %s\r\n"
-#define FMT_RPL_TOPIC               ":%s 332 %s %s :%s\r\n"
 #define FMT_RPL_NAMREPLY_PARTIAL    ":%s 353 %s %s :"
 #define FMT_RPL_ENDOFNAMES          ":%s 366 %s %s :End of NAMES list\r\n"
 
@@ -96,11 +102,16 @@ int Reply_RplWhoIsUser   (client_s *client, client_s *queried, char response[sta
 int Reply_RplWhoIsServer (client_s *client, client_s *queried, char response[static IRC_MSG_SIZE]);
 int Reply_RplEndOfWhoIs  (client_s *client, client_s *queried, char response[static IRC_MSG_SIZE]);
 
+/*
+ * TOPIC replies.
+ */
+int Reply_RplTopic(client_s *client, server_s *server, channel_s *channel, char response[static IRC_MSG_SIZE]);
+int Reply_RplNoTopic(client_s *client, server_s *server, channel_s *channel, char response[static IRC_MSG_SIZE]);
+
 
 /*
  * JOIN replies.
  */
-int Reply_RplTopic(client_s *client, server_s *server, channel_s *channel, char response[static IRC_MSG_SIZE]);
 int Reply_RplNamReply(client_s *client, server_s *server, channel_s *channel, char response[static IRC_MSG_SIZE]);
 int Reply_RplNamReplyAll(client_s *client, server_s *server, channel_s *channel, GQueue *responses);
 int Reply_RplEndOfNames(client_s *client, server_s *server, channel_s *channel, char response[static IRC_MSG_SIZE]);
@@ -111,7 +122,6 @@ int Reply_RplEndOfNames(client_s *client, server_s *server, channel_s *channel, 
 int Reply_RplListStart(client_s *client, server_s *server, char response[static IRC_MSG_SIZE]);
 int Reply_RplList(client_s *client, server_s *server, channel_s *channel, char response[static IRC_MSG_SIZE]);
 int Reply_RplListEnd(client_s *client, server_s *server, char response[static IRC_MSG_SIZE]);
-
 
 
 /*
@@ -136,6 +146,7 @@ int Reply_Pong                 (const char *, char *);
 
 int Message_Privmsg(client_s *, const char *msgtarget, const char *contents, char *response);
 int Format_MessageJoin(const client_s *client, const char *channel, char *response);
+int Format_MessagePart(const client_s *client, const char *channel, const char *part_message, char *response);
 
 
 #endif

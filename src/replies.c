@@ -259,3 +259,17 @@ int Reply_RplListEnd(client_s *client, server_s *server, char response[static IR
 {
     return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_LISTEND, server->hostname, client->nickname);
 }
+
+
+int Reply_RplNoTopic(client_s *client, server_s *server, channel_s *channel, char response[static IRC_MSG_SIZE])
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_NOTOPIC, server->hostname, client->nickname,
+            channel->name);
+}
+
+
+int Format_MessagePart(const client_s *client, const char *channel, const char *part_message, char *response)
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_MSG_PART, client->nickname, client->username, client->hostname,
+            channel, part_message ? part_message : client->nickname);
+}

@@ -71,6 +71,12 @@ int channel_sendall_join(channel_s *channel, struct client_s *source);
 
 
 /**
+ *
+ */
+int channel_sendall_part(channel_s *channel, struct client_s *source, const char *part_message);
+
+
+/**
  * Verifies the validity of the given channel name.
  * @param name The name to test.
  * @return 0 if the name is valid, -1 if not.
@@ -111,6 +117,9 @@ void channel_remove_member(channel_s *channel, struct client_s *client);
 
 
 size_t channel_size(channel_s *channel);
+
+
+void channel_set_topic(channel_s *channel, const char *topic);
 
 
 

@@ -133,6 +133,13 @@ channel_s * server_create_channel(server_s *server, char *name, struct client_s 
     return channel;
 }
 
+
+void server_remove_channel(server_s *server, channel_s *channel)
+{
+    g_hash_table_remove(server->channels, channel->name);
+    free(channel);
+}
+
 static void string_key_destroy_func(gpointer data)
 {
     g_free(data);

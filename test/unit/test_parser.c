@@ -273,6 +273,58 @@ static void TestParser_ListChannels()
 }
 
 
+static void TestParser_Topic()
+{
+    char message[] = "TOPIC\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(TOPIC);
+    expect_message_parse_error(ERR_NEEDMOREPARAMS);
+}
+
+
+static void TestParser_TopicChannelOnly()
+{
+    char message[] = "TOPIC #channel1\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(TOPIC);
+    expect_message_parse_error_none();
+
+    TEST_ASSERT_EQUAL_STRING("#channel1", parsed.message.topic.channel);
+    TEST_ASSERT_EQUAL_PTR(NULL, parsed.message.topic.topic);
+}
+
+
+static void TestParser_TopicChannelFull()
+{
+    char message[] = "TOPIC #channel1 :Topic here\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(TOPIC);
+    expect_message_parse_error_none();
+
+    TEST_ASSERT_EQUAL_STRING("#channel1", parsed.message.topic.channel);
+    TEST_ASSERT_EQUAL_STRING("Topic here", parsed.message.topic.topic);
+}
+
+
+static void TestParser_TopicEmptyTopic()
+{
+    char message[] = "TOPIC #channel1 :\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(TOPIC);
+    expect_message_parse_error_none();
+
+    TEST_ASSERT_EQUAL_STRING("#channel1", parsed.message.topic.channel);
+    TEST_ASSERT_EQUAL_STRING("", parsed.message.topic.topic);
+}
+
 
 int main() {
     UnityBegin("test_parser.c");
@@ -320,6 +372,15 @@ int main() {
      */
     RUN_TEST(TestParser_List);
     RUN_TEST(TestParser_ListChannels);
+
+    /*
+     * TOPIC tests.
+     */
+    RUN_TEST(TestParser_Topic);
+    RUN_TEST(TestParser_TopicChannelFull);
+    RUN_TEST(TestParser_TopicChannelOnly);
+    RUN_TEST(TestParser_TopicEmptyTopic);
+
 
 
     return UnityEnd();

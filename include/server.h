@@ -58,4 +58,6 @@ channel_s * server_get_channel(server_s *server, char *name);
  */
 channel_s * server_create_channel(server_s *server, char *name, struct client_s *operator);
 
+void server_remove_channel(server_s *server, channel_s *channel);
+
 #endif

@@ -51,12 +51,18 @@ struct irc_message_join {
 };
 
 struct irc_message_part {
-    char *channels; /* Comma-delimited list of channels. */
+    char *channels;     /* Comma-delimited list of channels. */
+    char *part_message;
 };
 
 struct irc_message_list {
     char *channels; /* Comma-delimited list of channels. */
     char *server;
+};
+
+struct irc_message_topic {
+    char *channel;
+    char *topic;
 };
 
 typedef struct irc_message {
@@ -72,6 +78,7 @@ typedef struct irc_message {
         struct irc_message_join     join;
         struct irc_message_part     part;
         struct irc_message_list     list;
+        struct irc_message_topic    topic;
     }                               message;
 } irc_message_s;
 

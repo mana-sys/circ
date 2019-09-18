@@ -19,6 +19,7 @@ static int parse_message_whois   (struct irc_message *message, char *saveptr);
 static int parse_message_join    (irc_message_s *message, char *saveptr);
 static int parse_message_part    (irc_message_s *message, char *saveptr);
 static int parse_message_list    (irc_message_s *message, char *saveptr);
+static int parse_message_topic   (irc_message_s *message, char *saveptr);
 
 
 int parse_message(char *buf, struct irc_message *message)
@@ -51,6 +52,8 @@ int parse_message(char *buf, struct irc_message *message)
             return parse_message_part(message, saveptr);
         } else if (strcmp(tok, "LIST") == 0) {
             return parse_message_list(message, saveptr);
+        } else if (strcmp(tok, "TOPIC") == 0) {
+            return parse_message_topic(message, saveptr);
         } else {
             message->type = UNKNOWN;
             return 0;
@@ -248,6 +251,9 @@ static int parse_message_part(irc_message_s *message, char *saveptr)
 
     message->type = PART;
 
+    /*
+     * Parse the list of <channel> parameters.
+     */
     tok = msgtok_r(NULL, &toklen, &saveptr);
 
     if (tok == NULL || toklen == 0) {
@@ -255,7 +261,20 @@ static int parse_message_part(irc_message_s *message, char *saveptr)
         return ERR_NEEDMOREPARAMS;
     }
 
+    /*
+     * Parse the optional <Part Message> parameter.
+     */
     message->message.part.channels = tok;
+
+    tok = msgtok_r(NULL, &toklen, &saveptr);
+    if (tok == NULL || toklen == 0) {
+        message->message.part.part_message = NULL;
+        goto done;
+    }
+
+    message->message.part.part_message = tok;
+
+    done:
     message->parse_err = 0;
     return 0;
 }
@@ -283,5 +302,43 @@ static int parse_message_list(irc_message_s *message, char *saveptr)
     /*
      * TODO: Add support for <server> parameter.
      */
+    return 0;
+}
+
+
+static int parse_message_topic(irc_message_s *message, char *saveptr)
+{
+    size_t toklen;
+    char * tok;
+
+    message->type = TOPIC;
+
+    /*
+     * Parse the <channel> parameter.
+     */
+    tok = msgtok_r(NULL, &toklen, &saveptr);
+
+    if (tok == NULL || toklen == 0) {
+        message->parse_err = ERR_NEEDMOREPARAMS;
+        return ERR_NEEDMOREPARAMS;
+    }
+
+    message->message.topic.channel = tok;
+
+    /*
+     * Parse the <topic> parameter.
+     */
+    tok = msgtok_r(NULL, &toklen, &saveptr);
+
+    /*
+     * The empty string ("") is a valid value for the <topic> parameter.
+     */
+    if (tok == NULL)
+        goto done;
+
+    message->message.topic.topic = tok;
+
+    done:
+    message->parse_err = 0;
     return 0;
 }
