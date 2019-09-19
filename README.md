@@ -1,5 +1,6 @@
 # circ
-![build status](https://travis-ci.com/benlalanes/circ.svg?token=TKyn2Ryua6spkE1fPLDz&branch=master) [![codecov](https://codecov.io/gl/mana-/circ/branch/master/graph/badge.svg?token=Sm7VYUwH18)](https://codecov.io/gl/mana-/circ)
+[![build status](https://travis-ci.com/mana-sys/circ.svg?token=q4tVM5BYGYfUJ3njM47q&branch=master)](https://travis-ci.com/mana-sys/circ) [![codecov](https://codecov.io/gh/mana-sys/circ/branch/master/graph/badge.svg?token=kjDMrcsIMx)](https://codecov.io/gh/mana-sys/circ)
+
 
 
 _circ_ is a simple implementation of a subset of the IRC protocol using C, written as an execise in
