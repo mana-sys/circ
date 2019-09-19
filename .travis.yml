@@ -34,4 +34,4 @@ script:
   - lcov --gcov-tool $(which gcov-8) --directory . --capture --output-file coverage.info
   - lcov --gcov-tool $(which gcov-8) --remove coverage.info '*/test/*' --output-file coverage.info
   - lcov --gcov-tool $(which gcov-8) --list coverage.info
-  - bash <(curl -s https://codecov.io/bash) -f coverage.info -t 98c23671-ce6d-47e6-90e8-f656ed878ea0
+  - bash <(curl -s https://codecov.io/bash) -f coverage.info -t 55ff0a0a-e7ab-46a6-a041-f47057e743f6
