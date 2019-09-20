@@ -13,9 +13,10 @@ vector_s *vector_new(size_t cap)
     vector->size = 0;
     vector->cap = cap;
 
-    if (cap) {
-        vector->items = calloc(cap, sizeof(void *));
-    }
+    if (cap)
+        vector->items = malloc(cap * sizeof(void *));
+    else
+        vector->items = NULL;
 
     vector->sp = vector->items;
 
@@ -38,10 +39,11 @@ void vector_push_back(vector_s *vector, void *data)
         else
             vector->cap *= 2;
 
-        vector->items = realloc(vector->items, vector->cap);
-        vector->sp = vector->items + vector->size * sizeof(void *);
+        vector->items = realloc(vector->items, vector->cap * sizeof(void *));
+        vector->sp = vector->items + vector->size;
     }
 
+    vector->size++;
     *vector->sp++ = data;
 }
 
@@ -49,7 +51,7 @@ void vector_push_back(vector_s *vector, void *data)
 void *vector_peek_back(vector_s * vector)
 {
     if (vector->size)
-        return *vector->sp;
+        return *(vector->sp - 1);
 
     return NULL;
 }
@@ -59,18 +61,20 @@ void * vector_pop_back(vector_s *vector)
 {
     if (vector->size) {
         vector->size--;
+        vector->sp--;
+        return *vector->sp;
     }
 
-    return *vector->sp;
+    return NULL;
 }
 
 
-void * vector_get_index(vector_s *vector, size_t index)
-{
-
-}
-
-void vector_remove_index(vector_s *vector, size_t index)
-{
-
-}
+//void * vector_get_index(vector_s *vector, size_t index)
+//{
+//
+//}
+//
+//void vector_remove_index(vector_s *vector, size_t index)
+//{
+//
+//}

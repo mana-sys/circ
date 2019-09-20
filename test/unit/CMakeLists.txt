@@ -46,6 +46,8 @@ add_executable(test_hashtable test_hashtable.c ${UNITY_SOURCES} ${CMAKE_SOURCE_D
 add_executable(test_handlers test_handlers.c ${UNITY_SOURCES} ${CIRC_SRC})
 add_executable(test_read_message1 test_read_message1.c ${UNITY_SOURCES} ${CMAKE_SOURCE_DIR}/src/read_message.c)
 add_executable(test_motd test_motd.c ${UNITY_SOURCES} ${CMAKE_SOURCE_DIR}/src/motd.c)
+add_executable(test_vector test_vector.c ${UNITY_SOURCES} ${CMAKE_SOURCE_DIR}/src/vector.c)
+
 
 #add_executable(hashtable_test hashtable_test.c hashtable_test_runner.c ${UNITY_SOURCES})
 
