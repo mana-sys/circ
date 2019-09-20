@@ -177,6 +177,27 @@ static void test_vector_get_index()
     }
 }
 
+static void test_vector_remove_index_2()
+{
+    vector_push_back(vec, INT_TO_POINTER(1));
+    vector_push_back(vec, INT_TO_POINTER(2));
+    vector_push_back(vec, INT_TO_POINTER(3));
+    vector_push_back(vec, INT_TO_POINTER(4));
+
+    vector_remove_index(vec, 1);
+
+    TEST_ASSERT_EQUAL_PTR(INT_TO_POINTER(1), *vec->items);
+    TEST_ASSERT_EQUAL_PTR(INT_TO_POINTER(3), *(vec->items + 1));
+    TEST_ASSERT_EQUAL_PTR(INT_TO_POINTER(4), *(vec->items + 2));
+
+    /*
+     * Make sure we only copy necessary memory.
+     */
+    TEST_ASSERT_EQUAL_PTR(INT_TO_POINTER(4), *(vec->items + 3));
+
+    TEST_ASSERT_EQUAL_UINT(3, vec->size);
+}
+
 
 static void test_vector_remove_index()
 {
@@ -232,6 +253,7 @@ int main()
 
     RUN_TEST(test_vector_get_index);
     RUN_TEST(test_vector_remove_index);
+    RUN_TEST(test_vector_remove_index_2);
 
     RUN_TEST(test_vector_push_and_pop);
 

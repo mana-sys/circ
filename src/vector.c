@@ -91,12 +91,3 @@ void * vector_remove_index(vector_s *vector, size_t index)
 
     return data;
 }
-//void * vector_get_index(vector_s *vector, size_t index)
-//{
-//
-//}
-//
-//void vector_remove_index(vector_s *vector, size_t index)
-//{
-//
-//}
