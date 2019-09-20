@@ -372,6 +372,7 @@ static int Handler_WhoIs(client_s *client, server_s *server, irc_message_s *mess
 static int handler_join(client_s * client, server_s * server, irc_message_s * message, GQueue *responses)
 {
     char *      channel_name;
+    char *      save_ptr;
     channel_s * channel;
 
     circlog(L_DEBUG, "Handling JOIN message.");
@@ -383,42 +384,56 @@ static int handler_join(client_s * client, server_s * server, irc_message_s * me
         push_reply(responses, Reply_ErrNeedMoreParams, client, "JOIN");
         return -1;
     }
-
-    channel_name = message->message.join.channels;
-
+    
     /*
-     * Check for the channel's existence.
+     * The channels field may be a list of channels.
      */
-    channel = server_get_channel(server, channel_name);
+    channel_name = strtok_r(message->message.join.channels, ",", &save_ptr);
+    while (channel_name) {
 
-    /*
-     * If the channel does not exist, create it with the current client as the
-     * channel operator. Else, add the client to the found channel.
-     */
-    if (channel == NULL) {
+        /*
+         * TODO: verify validity of channel name
+         */
 
-        channel = server_create_channel(server, channel_name, client);
+        /*
+         * Check for channel's existence. If channel exists, join the channel.
+         * If the channel doesn't exist, have the server create the channel with the client
+         * as the channel operator.
+         */
+        channel = server_get_channel(server, channel_name);
+        if (channel) {
 
-        circlog(L_INFO, "client =%d (nick =%s) has created a new channel =%s", client->clientId,
-                client->username, channel_name);
-    } else {
+            channel_join(channel, client);
+            circlog(L_DEBUG, "client %d (nick= %s) has joined channel =%s", client->clientId,
+                    client->nickname, channel->name);
 
-        circlog(L_DEBUG, "client %d (nick= %s) has joined channel =%s",
-                client->clientId, client->nickname, channel->name);
+        } else {
 
-        channel_join(channel, client);
+            channel = server_create_channel(server, channel_name, client);
+            circlog(L_INFO, "client =%d (nick =%s) has created a new channel =%s", client->clientId,
+                    client->username, channel_name);
+        }
+
+        /*
+         * Reply with a JOIN message, RPL_TOPIC, RPL_NAMREPLY, and RPL_ENDOFNAMES.
+         */
+        push_reply(responses, Format_MessageJoin, client, channel->name);
+
+        /*
+         * Only send RPL_TOPIC if the channel has a topic set.
+         */
+        if (strlen(channel->topic)) {
+            push_reply(responses, Reply_RplTopic, client, server, channel);
+        }
+
+        push_reply(responses, Reply_RplNamReply, client, server, channel);
+        push_reply(responses, Reply_RplEndOfNames, client, server, channel);
+
+        /*
+         * Get the next channel name.
+         */
+        channel_name = strtok_r(NULL, ",", &save_ptr);
     }
-
-    push_reply(responses, Format_MessageJoin, client, channel->name);
-
-    if (strlen(channel->topic)) {
-        push_reply(responses, Reply_RplTopic, client, server, channel);
-    }
-
-    push_reply(responses, Reply_RplNamReply, client, server, channel);
-    push_reply(responses, Reply_RplEndOfNames, client, server, channel);
-
-
 
     return 0;
 }
