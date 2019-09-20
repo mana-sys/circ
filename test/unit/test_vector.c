@@ -23,7 +23,7 @@ void setUp()
 
 void tearDown()
 {
-    free(vec);
+    vector_free(vec);
 }
 
 
@@ -94,6 +94,8 @@ static void test_vector_push_back_adjust_cap()
     TEST_ASSERT_EQUAL_PTR(*(vec2->sp - 1), INT_TO_POINTER(3));
     TEST_ASSERT_EQUAL_PTR(*(vec2->sp - 2), INT_TO_POINTER(2));
     TEST_ASSERT_EQUAL_PTR(*(vec2->sp - 3), INT_TO_POINTER(1));
+
+    vector_free(vec2);
 }
 
 
@@ -161,6 +163,40 @@ static void test_vector_pop_back_empty()
 }
 
 
+static void test_vector_get_index()
+{
+    int data, j;
+
+    for (j = 0; j < 10; j++) {
+        vector_push_back(vec, INT_TO_POINTER(j));
+    }
+
+    for (j = 0; j < 10; j++) {
+        data = POINTER_TO_INT(vector_get_index(vec, (size_t) j));
+        TEST_ASSERT_EQUAL_INT(j, data);
+    }
+}
+
+
+static void test_vector_remove_index()
+{
+    int data, j, k;
+
+    for (j = 0; j < 10; j++) {
+        vector_push_back(vec, INT_TO_POINTER(j));
+    }
+
+    for (j = 0; j < 10; j++) {
+         data = POINTER_TO_INT(vector_remove_index(vec, 0));
+
+         TEST_ASSERT_EQUAL_INT(j, data);
+         for (k = j + 1; k < 10; k++) {
+             TEST_ASSERT_EQUAL_INT(k, POINTER_TO_INT(vector_get_index(vec, (size_t) k - j - 1)));
+         }
+    }
+}
+
+
 static void test_vector_push_and_pop()
 {
     int j;
@@ -177,7 +213,6 @@ static void test_vector_push_and_pop()
     TEST_ASSERT_EQUAL_UINT(0, vec->size);
     TEST_ASSERT_EQUAL_UINT(20, vec->cap);
     TEST_ASSERT_EQUAL_PTR(vec->items, vec->sp);
-
 }
 
 
@@ -194,6 +229,9 @@ int main()
     RUN_TEST(test_vector_peek_back_empty);
     RUN_TEST(test_vector_pop_back);
     RUN_TEST(test_vector_pop_back_empty);
+
+    RUN_TEST(test_vector_get_index);
+    RUN_TEST(test_vector_remove_index);
 
     RUN_TEST(test_vector_push_and_pop);
 

@@ -82,10 +82,15 @@ void vector_push_back(vector_s *vector, void *data);
 void * vector_pop_back(vector_s *vector);
 
 
-
-
-//void *      vector_get_index(vector_s *vector, size_t index);
-//void        vector_remove_index(vector_s *vector, size_t index);
+/**
+ * Gets the element at the specified index.
+ *
+ * @param vector The vector on which to perform the get
+ * @param index The index of the desired element
+ * @return The data at the given index
+ */
+void * vector_get_index(vector_s *vector, size_t index);
+void * vector_remove_index(vector_s *vector, size_t index);
 
 
 #endif

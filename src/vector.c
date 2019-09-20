@@ -2,6 +2,8 @@
 // Created by mana on 9/16/19.
 //
 
+#include <string.h>
+
 #include "vector.h"
 
 vector_s *vector_new(size_t cap)
@@ -26,6 +28,7 @@ vector_s *vector_new(size_t cap)
 
 void vector_free(vector_s *vector)
 {
+    free(vector->items);
     free(vector);
 }
 
@@ -69,6 +72,25 @@ void * vector_pop_back(vector_s *vector)
 }
 
 
+void * vector_get_index(vector_s *vector, size_t index)
+{
+    return *(vector->items + index);
+}
+
+
+void * vector_remove_index(vector_s *vector, size_t index)
+{
+    void *data;
+
+    data = *(vector->items + index);
+
+    memmove(vector->items + index, vector->items + index + 1, (vector->size - index - 1) * sizeof(void *));
+
+    vector->size--;
+    vector->sp--;
+
+    return data;
+}
 //void * vector_get_index(vector_s *vector, size_t index)
 //{
 //
