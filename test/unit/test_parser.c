@@ -326,6 +326,32 @@ static void TestParser_TopicEmptyTopic()
 }
 
 
+static void TestParser_Names()
+{
+    char message[] = "NAMES #channel1,#channel2\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(NAMES);
+    expect_message_parse_error_none();
+
+    TEST_ASSERT_EQUAL_STRING("#channel1,#channel2", parsed.message.names.channels);
+}
+
+static void TestParser_NamesNoChannels()
+{
+    char message[] = "NAMES\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(NAMES);
+    expect_message_parse_error_none();
+
+    TEST_ASSERT_EQUAL_PTR(NULL, parsed.message.names.channels);
+}
+
+
+
 int main() {
     UnityBegin("test_parser.c");
 
@@ -381,7 +407,11 @@ int main() {
     RUN_TEST(TestParser_TopicChannelOnly);
     RUN_TEST(TestParser_TopicEmptyTopic);
 
-
+    /*
+     * NAMES tests.
+     */
+    RUN_TEST(TestParser_Names);
+    RUN_TEST(TestParser_NamesNoChannels);
 
     return UnityEnd();
 }

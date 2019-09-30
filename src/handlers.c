@@ -36,9 +36,7 @@ static int handler_join    (client_s *, server_s *, irc_message_s *, GQueue *);
 static int handler_part    (client_s *, server_s *, irc_message_s *, GQueue *);
 static int handler_list    (client_s *, server_s *, irc_message_s *, GQueue *);
 static int handler_topic   (client_s *, server_s *, irc_message_s *, GQueue *);
-
-
-
+static int handler_names   (client_s *, server_s *, irc_message_s *, GQueue *);
 
 
 __attribute__((constructor))
@@ -57,6 +55,7 @@ static void Handler_Register()
     handlers2[PART]    = handler_part;
     handlers2[LIST]    = handler_list;
     handlers2[TOPIC]   = handler_topic;
+    handlers2[NAMES]   = handler_names;
 }
 
 int Handler_HandleMessage (client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
@@ -567,3 +566,38 @@ static int handler_topic(client_s *client, server_s *server, irc_message_s *mess
     return 0;
 }
 
+
+static int handler_names(client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
+{
+    char *saveptr;
+    char *tok;
+    channel_s *channel;
+
+    /*
+     * If a list of channels was given, then send RPL_NAMREPLY for each channel in the list.
+     */
+    if (message->message.names.channels) {
+        tok = strtok_r(message->message.names.channels, ",", &saveptr);
+        while (tok) {
+
+            fprintf(stderr, "NAMES for %s\n", tok);
+
+            /*
+             * Reply with RPL_NAMREPLY and RPL_ENDOFNAMES if the server contains the
+             * specified channel.
+             */
+            if ((channel = server_get_channel(server, tok))) {
+                push_reply(responses, Reply_RplNamReply, client, server, channel);
+                push_reply(responses, Reply_RplEndOfNames, client, server, channel);
+            }
+
+            /*
+             * Advance to the next channel in the list.
+             */
+            tok = strtok_r(NULL, ",", &saveptr);
+
+        }
+    }
+
+    return 0;
+}

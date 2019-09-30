@@ -20,6 +20,7 @@ static int parse_message_join    (irc_message_s *message, char *saveptr);
 static int parse_message_part    (irc_message_s *message, char *saveptr);
 static int parse_message_list    (irc_message_s *message, char *saveptr);
 static int parse_message_topic   (irc_message_s *message, char *saveptr);
+static int parse_message_names   (irc_message_s *message, char *saveptr);
 
 
 int parse_message(char *buf, struct irc_message *message)
@@ -54,6 +55,8 @@ int parse_message(char *buf, struct irc_message *message)
             return parse_message_list(message, saveptr);
         } else if (strcmp(tok, "TOPIC") == 0) {
             return parse_message_topic(message, saveptr);
+        } else if (strcmp(tok, "NAMES") == 0) {
+            return parse_message_names(message, saveptr);
         } else {
             message->type = UNKNOWN;
             return 0;
@@ -340,5 +343,24 @@ static int parse_message_topic(irc_message_s *message, char *saveptr)
 
     done:
     message->parse_err = 0;
+    return 0;
+}
+
+
+static int parse_message_names(irc_message_s *message, char *saveptr)
+{
+    char *tok;
+    size_t toklen;
+
+    message->type = NAMES;
+
+    /*
+     * Optional comma-delimited list of channels was specified, so parse it.
+     */
+    if ((tok = msgtok_r(NULL, &toklen, &saveptr)))
+        message->message.names.channels = tok;
+    else
+        message->message.names.channels = NULL;
+
     return 0;
 }
