@@ -394,6 +394,28 @@ static void TestHandlers_LUsers_Full()
                      {.response = "255 nick :I have 2 clients and 1 servers\r\n", .len = 1});
 }
 
+
+static void TestHandlers_AwayMessage()
+{
+    with_client(.nickname = "nick");
+    with_message(.type = AWAY, .message.away.text = "Back in 5 min");
+
+    TestHandlers_Run();
+
+    TEST_ASSERT_EQUAL_INT(TRUE, client.away);
+    TEST_ASSERT_EQUAL_STRING("Back in 5 min", client.away_message);
+}
+
+static void TestHandlers_AwayNoMessage()
+{
+    with_client(.nickname = "nick");
+    with_message(.type = AWAY, .message.away.text = NULL);
+
+    TestHandlers_Run();
+
+    TEST_ASSERT_EQUAL_INT(FALSE, client.away);
+}
+
 int main()
 {
     UnityBegin("test_handlers.c");
@@ -439,6 +461,12 @@ int main()
      */
     RUN_TEST(TestHandlers_LUsers);
     RUN_TEST(TestHandlers_LUsers_Full);
+
+    /*
+     * AWAY tests.
+     */
+    RUN_TEST(TestHandlers_AwayMessage);
+    RUN_TEST(TestHandlers_AwayNoMessage);
 
 
     return UnityEnd();

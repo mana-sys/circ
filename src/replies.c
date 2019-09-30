@@ -273,3 +273,19 @@ int Format_MessagePart(const client_s *client, const char *channel, const char *
     return snprintf(response, IRC_MSG_SIZE + 1, FMT_MSG_PART, client->nickname, client->username, client->hostname,
             channel, part_message ? part_message : client->nickname);
 }
+
+int format_rpl_unaway(client_s *client, server_s *server, char *response)
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_UNAWAY, server->hostname, client->nickname);
+}
+
+int format_rpl_nowaway(client_s *client, server_s *server, char *response)
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_NOWAWAY, server->hostname, client->nickname);
+}
+
+int format_rpl_away(client_s *client, server_s *server, const char *nick, const char *away_message, char *response)
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_AWAY, server->hostname, client->nickname,
+            nick, away_message);
+}

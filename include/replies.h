@@ -54,6 +54,27 @@
 #define FMT_RPL_LIST                ":%s 322 %s %s %d :%s\r\n"
 #define FMT_RPL_LISTEND                 ":%s 323 %s :End of /LIST\r\n"
 
+
+/*
+ * AWAY replies.
+ */
+
+/*
+ * Format: "<nick> :<away message>"
+ */
+#define FMT_RPL_AWAY ":%s 301 %s %s :%s\r\n"
+
+/*
+ * Format: ":You are not longer marked as being away"
+ */
+#define FMT_RPL_UNAWAY ":%s 305 %s :You are no longer marked as being away\r\n"
+
+/*
+ * Format: ":You have been marked as being away"
+ */
+#define FMT_RPL_NOWAWAY "%s 306 %s :You have been marked as being away\r\n"
+
+
 /*
  * Channel-related replies.
  */
@@ -142,11 +163,18 @@ int Reply_ErrUnknownCommand    (client_s *, const char *, char *);
 int Reply_Pong                 (const char *, char *);
 
 
-
-
 int Message_Privmsg(client_s *, const char *msgtarget, const char *contents, char *response);
 int Format_MessageJoin(const client_s *client, const char *channel, char *response);
 int Format_MessagePart(const client_s *client, const char *channel, const char *part_message, char *response);
 
+
+/*
+ * AWAY-related replies.
+ */
+
+int format_rpl_away(client_s *client, server_s *server, const char *nick, const char *away_message, char *response);
+
+int format_rpl_unaway(client_s *client, server_s *server, char *response);
+int format_rpl_nowaway(client_s *client, server_s *server, char *response);
 
 #endif

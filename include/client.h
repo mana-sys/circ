@@ -24,6 +24,8 @@ typedef struct client_s {
     char        username[IRC_MSG_SIZE];
     char        hostname[IRC_HOSTNAME_MAX + 1];
     char        fullname[IRC_MSG_SIZE];
+    bool        away;
+    char        away_message[IRC_MSG_SIZE + 1];
 } client_s;
 
 
@@ -110,5 +112,25 @@ int client_change_nick(client_s *client, char *message);
  * @return
  */
 int client_join_channel(client_s *client, server_s *server, char *name);
+
+
+/**
+ * Sets the client's status to AWAY. While AWAY, the client will automatically send
+ * the reply string to any incoming messages directed at the client (not on a channel
+ * of which the client is part).
+ *
+ * @param client The client to set as AWAY
+ * @param away_message The message to send as the automatic reply string for any incoming messages.
+ */
+void client_set_away(client_s *client, const char *away_message);
+
+
+/**
+ * Sets the client as not AWAY. This action is idempotent; if the client is already not AWAY,
+ * then this action has no effect.
+ *
+ * @param client The client to set as not AWAY.
+ */
+void client_unset_away(client_s *client);
 
 #endif //CIRC_CLIENT_H

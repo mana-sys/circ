@@ -22,6 +22,8 @@ static int parse_message_list    (irc_message_s *message, char *saveptr);
 static int parse_message_topic   (irc_message_s *message, char *saveptr);
 static int parse_message_names   (irc_message_s *message, char *saveptr);
 
+static int parse_message_away(irc_message_s *, char *);
+
 
 int parse_message(char *buf, struct irc_message *message)
 {
@@ -57,6 +59,8 @@ int parse_message(char *buf, struct irc_message *message)
             return parse_message_topic(message, saveptr);
         } else if (strcmp(tok, "NAMES") == 0) {
             return parse_message_names(message, saveptr);
+        } else if (strcmp(tok, "AWAY") == 0) {
+            return parse_message_away(message, saveptr);
         } else {
             message->type = UNKNOWN;
             return 0;
@@ -363,4 +367,27 @@ static int parse_message_names(irc_message_s *message, char *saveptr)
         message->message.names.channels = NULL;
 
     return 0;
+}
+
+
+static int parse_message_away(irc_message_s *message, char *saveptr)
+{
+    char *tok;
+    size_t toklen;
+
+    message->type = AWAY;
+
+    /*
+     * Check for optional <text> parameter.
+     */
+    if ((tok = msgtok_r(NULL, &toklen, &saveptr)))
+        message->message.away.text = tok;
+    else
+        message->message.away.text = NULL;
+
+    /*
+     * Parsing the message always succeeds.
+     */
+    return 0;
+
 }

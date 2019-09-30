@@ -350,6 +350,30 @@ static void TestParser_NamesNoChannels()
     TEST_ASSERT_EQUAL_PTR(NULL, parsed.message.names.channels);
 }
 
+static void TestParser_AwayMessage()
+{
+    char message[] = "AWAY :Back in 5 min\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(AWAY);
+    expect_message_parse_error_none();
+
+    TEST_ASSERT_EQUAL_STRING("Back in 5 min", parsed.message.away.text);
+}
+
+static void TestParser_AwayNoMessage()
+{
+    char message[] = "AWAY\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(AWAY);
+    expect_message_parse_error_none();
+
+    TEST_ASSERT_EQUAL_PTR(NULL, parsed.message.away.text);
+}
+
 
 
 int main() {
@@ -412,6 +436,12 @@ int main() {
      */
     RUN_TEST(TestParser_Names);
     RUN_TEST(TestParser_NamesNoChannels);
+
+    /*
+     * AWAY tests.
+     */
+    RUN_TEST(TestParser_AwayMessage);
+    RUN_TEST(TestParser_AwayNoMessage);
 
     return UnityEnd();
 }

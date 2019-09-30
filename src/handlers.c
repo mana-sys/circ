@@ -37,6 +37,7 @@ static int handler_part    (client_s *, server_s *, irc_message_s *, GQueue *);
 static int handler_list    (client_s *, server_s *, irc_message_s *, GQueue *);
 static int handler_topic   (client_s *, server_s *, irc_message_s *, GQueue *);
 static int handler_names   (client_s *, server_s *, irc_message_s *, GQueue *);
+static int handler_away    (client_s *, server_s *, irc_message_s *, GQueue *);
 
 
 __attribute__((constructor))
@@ -56,6 +57,7 @@ static void Handler_Register()
     handlers2[LIST]    = handler_list;
     handlers2[TOPIC]   = handler_topic;
     handlers2[NAMES]   = handler_names;
+    handlers2[AWAY]    = handler_away;
 }
 
 int Handler_HandleMessage (client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
@@ -245,6 +247,13 @@ static int Handler_Privmsg    (client_s *client, server_s *server, irc_message_s
                                         response->response);
 
         Client_Send(target, response);
+
+        /*
+         * If the target client is away, also send the automatic reply string to the source client.
+         */
+        if (target->away) {
+            push_reply(responses, format_rpl_away, client, server, target->nickname, target->away_message);
+        }
     }
 
     return 0;
@@ -597,6 +606,26 @@ static int handler_names(client_s *client, server_s *server, irc_message_s *mess
             tok = strtok_r(NULL, ",", &saveptr);
 
         }
+    }
+
+    return 0;
+}
+
+
+static int handler_away(client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
+{
+
+    /*
+     * Check if the <text> parameter is specified. If it is, then set the client's status as AWAY and
+     * set its away_message to the given message in the <text> parameter. If it is not, unmark the client
+     * as AWAY.
+     */
+    if (message->message.away.text) {
+        client_set_away(client, message->message.away.text);
+        push_reply(responses, format_rpl_nowaway, client, server);
+    } else {
+        client_unset_away(client);
+        push_reply(responses, format_rpl_unaway, client, server);
     }
 
     return 0;

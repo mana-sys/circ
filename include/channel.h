@@ -20,6 +20,11 @@ typedef struct channel_s {
     char            topic[CHANNEL_TOPIC_MAX + 1];   /* The topic of the channel */
     GHashTable *    members;                        /* Members of the channel (hash from client ID to client pointer */
     GHashTable *    member_modes;                   /* Modes of the channel members (hash from client ID to mode */
+    bool            private;                        /* Whether this channel is a private channel. */
+    bool            secret;                         /* Whether this channel is a secret channel. */
+    bool            invite_only;                    /* Whether this channel is invite-only. */
+    bool            no_outside_messages;
+    bool            moderated;
 } channel_s;
 
 

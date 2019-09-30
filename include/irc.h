@@ -18,7 +18,8 @@ enum irc_message_type {
     PART,
     TOPIC,
     LIST,
-    NAMES
+    NAMES,
+    AWAY,
 };
 
 struct irc_message_nick {
@@ -70,6 +71,10 @@ struct irc_names {
     char *channels; /* Comma-delimited list of channels. */
 };
 
+struct irc_away {
+    char *text;
+};
+
 typedef struct irc_message {
     enum irc_message_type           type;
     char *                          command;
@@ -85,6 +90,7 @@ typedef struct irc_message {
         struct irc_message_list     list;
         struct irc_message_topic    topic;
         struct irc_names            names;
+        struct irc_away away;
     }                               message;
 } irc_message_s;
 

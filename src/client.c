@@ -298,10 +298,15 @@ int client_join_channel(client_s *client, server_s *server, char *name)
     g_hash_table_insert(server->channels, g_strdup(name), channel);
 
     return 0;
+}
 
+void client_set_away(client_s *client, const char *away_message)
+{
+    client->away = true;
+    strncpy(client->away_message, away_message, IRC_MSG_SIZE);
+}
 
-
-
-
-    return 0;
+void client_unset_away(client_s *client)
+{
+    client->away = false;
 }
