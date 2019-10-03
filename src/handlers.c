@@ -38,6 +38,8 @@ static int handler_list    (client_s *, server_s *, irc_message_s *, GQueue *);
 static int handler_topic   (client_s *, server_s *, irc_message_s *, GQueue *);
 static int handler_names   (client_s *, server_s *, irc_message_s *, GQueue *);
 static int handler_away    (client_s *, server_s *, irc_message_s *, GQueue *);
+static int handler_oper    (client_s *, server_s *, irc_message_s *, GQueue *);
+
 
 
 __attribute__((constructor))
@@ -58,6 +60,7 @@ static void Handler_Register()
     handlers2[TOPIC]   = handler_topic;
     handlers2[NAMES]   = handler_names;
     handlers2[AWAY]    = handler_away;
+    handlers2[OPER]    = handler_oper;
 }
 
 int Handler_HandleMessage (client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
@@ -626,6 +629,58 @@ static int handler_away(client_s *client, server_s *server, irc_message_s *messa
     } else {
         client_unset_away(client);
         push_reply(responses, format_rpl_unaway, client, server);
+    }
+
+    return 0;
+}
+
+static int handler_oper(client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
+{
+    gpointer key;
+    char *password;
+    GHashTableIter iter;
+    response_s *forward;
+    client_s *notified;
+
+    /*
+     * Check for ERR_NEEDMOREPARAMS.
+     */
+    if (message->parse_err == ERR_NEEDMOREPARAMS) {
+        push_reply(responses, Reply_ErrNeedMoreParams, client, "OPER");
+        return -1;
+    }
+
+    /*
+     * Look up the <user> parameter in the hash of operators. If a corresponding entry does not exist,
+     * or if the entry does not match the <password> parameter, then send ERR_PASSWDMISMATCH. If the entry
+     * does match, then make the client an operator and broadcast to all other clients about the new operator.
+     */
+    if ((password = g_hash_table_lookup(server->operators, message->message.oper.user)) == NULL ||
+        strcmp(password, message->message.oper.password) != 0) {
+        push_reply(responses, format_err_passwdmismatch, client, server);
+        return -1;
+    }
+
+    Log_Info("user %s is now oper", client->username);
+    client_set_operator(client);
+
+    push_reply(responses, format_rpl_youreoper, client, server);
+
+    /*
+     * Notify all other clients.
+     */
+    g_hash_table_iter_init(&iter, server->clients);
+
+    while (g_hash_table_iter_next (&iter, &key, (gpointer) &notified)) {
+
+        if (GPOINTER_TO_INT(key) != client->clientId) {
+
+
+            forward = calloc(1, sizeof(response_s));
+            forward->len = format_msg_mode_oper(client, server, forward->response);
+
+            Client_Send(notified, forward);
+        }
     }
 
     return 0;

@@ -289,3 +289,19 @@ int format_rpl_away(client_s *client, server_s *server, const char *nick, const 
     return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_AWAY, server->hostname, client->nickname,
             nick, away_message);
 }
+
+int format_rpl_youreoper(client_s *client, server_s *server, char *response)
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_YOUREOPER, server->hostname, client->nickname);
+}
+
+int format_err_passwdmismatch(client_s *client, server_s *server, char *response)
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_ERR_PASSWDMISMATCH, server->hostname, client->nickname);
+}
+
+int format_msg_mode_oper(client_s *client, server_s *server, char *response)
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_MSG_MODE_OPER, server->hostname, client->nickname);
+
+}

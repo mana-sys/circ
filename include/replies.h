@@ -72,7 +72,24 @@
 /*
  * Format: ":You have been marked as being away"
  */
-#define FMT_RPL_NOWAWAY "%s 306 %s :You have been marked as being away\r\n"
+#define FMT_RPL_NOWAWAY ":%s 306 %s :You have been marked as being away\r\n"
+
+/*
+ * OPER replies.
+ */
+
+/*
+ * Format: ":Password incorrect"
+ */
+#define FMT_ERR_PASSWDMISMATCH ":%s 464 %s :Password incorrect\r\n"
+
+/*
+ * Format: ":You are now an IRC operator"
+ */
+#define FMT_RPL_YOUREOPER ":%s 381 %s :You are now an IRC operator\r\n"
+
+#define FMT_MSG_MODE_OPER ":%s MODE %s +o\r\n"
+
 
 
 /*
@@ -176,5 +193,11 @@ int format_rpl_away(client_s *client, server_s *server, const char *nick, const 
 
 int format_rpl_unaway(client_s *client, server_s *server, char *response);
 int format_rpl_nowaway(client_s *client, server_s *server, char *response);
+
+
+int format_rpl_youreoper(client_s *client, server_s *server, char *response);
+int format_err_passwdmismatch(client_s *client, server_s *server, char *response);
+int format_msg_mode_oper(client_s *client, server_s *server, char *response);
+
 
 #endif

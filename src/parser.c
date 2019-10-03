@@ -8,6 +8,15 @@
 
 #define NICK_MAX_SIZE 9
 
+
+#define check_need_more_params(tok, message) do {   \
+    if (tok == NULL) {                              \
+        message->parse_err = ERR_NEEDMOREPARAMS;    \
+        return ERR_NEEDMOREPARAMS;                  \
+    }                                               \
+} while(0)
+
+
 static int parse_message_nick    (struct irc_message *message, char *saveptr);
 static int parse_message_user    (struct irc_message *message, char *saveptr);
 static int parse_message_ping    (struct irc_message *message, char *saveptr);
@@ -23,6 +32,7 @@ static int parse_message_topic   (irc_message_s *message, char *saveptr);
 static int parse_message_names   (irc_message_s *message, char *saveptr);
 
 static int parse_message_away(irc_message_s *, char *);
+static int parse_message_oper(irc_message_s *, char *);
 
 
 int parse_message(char *buf, struct irc_message *message)
@@ -61,6 +71,8 @@ int parse_message(char *buf, struct irc_message *message)
             return parse_message_names(message, saveptr);
         } else if (strcmp(tok, "AWAY") == 0) {
             return parse_message_away(message, saveptr);
+        } else if (strcmp(tok, "OPER") == 0) {
+            return parse_message_oper(message, saveptr);
         } else {
             message->type = UNKNOWN;
             return 0;
@@ -390,4 +402,30 @@ static int parse_message_away(irc_message_s *message, char *saveptr)
      */
     return 0;
 
+}
+
+static int parse_message_oper(irc_message_s *message, char *saveptr)
+{
+    char *tok;
+    size_t toklen;
+
+    message->type = OPER;
+
+    /*
+     * Parse the <user> parameter.
+     */
+    tok = msgtok_r(NULL, &toklen, &saveptr);
+    check_need_more_params(tok, message);
+
+    message->message.oper.user = tok;
+
+    /*
+     * Parse the <password> parameter.
+     */
+    tok = msgtok_r(NULL, &toklen, &saveptr);
+    check_need_more_params(tok, message);
+
+    message->message.oper.password = tok;
+
+    return 0;
 }
