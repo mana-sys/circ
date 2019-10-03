@@ -20,6 +20,7 @@ typedef void (*parse_err_msg_handler)(char *);
 struct config_s {
     uint16_t port;
     char host[HOSTNAME_MAX + 1];
+    char *oper_passwd;
 };
 
 /**

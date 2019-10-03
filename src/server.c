@@ -6,6 +6,7 @@
 #include "connection.h"
 #include "log.h"
 #include "motd.h"
+#include "oper.h"
 #include "reactor.h"
 #include "server.h"
 #include "socket.h"
@@ -49,6 +50,15 @@ void start_server(const struct config_s conf[static 1])
 
     g_server.channels = g_hash_table_new_full((GHashFunc) g_str_hash, (GEqualFunc) g_str_equal,
             string_key_destroy_func, NULL);
+
+    /*
+     * Read entries for OPER command.
+     */
+    g_server.operators = g_hash_table_new_full((GHashFunc) g_str_hash, (GEqualFunc) g_str_equal,
+                                               string_key_destroy_func, string_key_destroy_func);
+
+    parse_oper_passwd(conf->oper_passwd, g_server.operators);
+
 
     /*
      * Get MOTD and hostname.

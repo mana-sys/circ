@@ -17,6 +17,7 @@ typedef struct server_s {
     GHashTable *    nicks;      /* Map from nicks (string) to client IDs (int) */
     GHashTable *    clients;    /* Map from client IDs (int) to clients (client_s *) */
     GHashTable *    channels;   /* Map from channel names (lowercase) to channel pointers. */
+    GHashTable *    operators;  /* Map from operator usernames to passwords. Used for OPER command. */
     char            hostname[HOSTNAME_MAX];   /* Pointer to the server's hostname. */
     const char *    motd;       /* Message of the day. */
     uint32_t        nUsers;     /* Number of currently registered users online. */

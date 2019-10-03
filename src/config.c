@@ -16,6 +16,8 @@ void set_default_configuration(struct config_s *conf)
 
     strncpy(conf->host, CIRC_HOSTNAME_DEFAULT, HOSTNAME_MAX);
     conf->host[HOSTNAME_MAX] = 0;
+
+    conf->oper_passwd = "oper.txt";
 }
 
 int parse_configuration(struct config_s *conf, int argc, char *argv[], size_t msg_len, char *msg)
@@ -24,7 +26,7 @@ int parse_configuration(struct config_s *conf, int argc, char *argv[], size_t ms
     int opt;
     char *s;
 
-    while ((opt = getopt(argc, argv, ":h:p:")) != -1) {
+    while ((opt = getopt(argc, argv, ":h:p:o:")) != -1) {
         switch(opt) {
             case 'h':
                 strncpy(conf->host, optarg, HOSTNAME_MAX);

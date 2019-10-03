@@ -11,6 +11,7 @@ set(CIRC_SRC
         log.c
         motd.c
         msgtok.c
+        oper.c
         parser.c
         reactor.c
         read_message.c
