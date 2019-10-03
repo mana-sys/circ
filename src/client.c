@@ -310,3 +310,13 @@ void client_unset_away(client_s *client)
 {
     client->away = false;
 }
+
+void client_set_operator(client_s *client)
+{
+    client->oper = true;
+}
+
+void client_unset_operator(client_s *client)
+{
+    client->oper = false;
+}

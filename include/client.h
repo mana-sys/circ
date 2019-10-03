@@ -25,6 +25,7 @@ typedef struct client_s {
     char        hostname[IRC_HOSTNAME_MAX + 1];
     char        fullname[IRC_MSG_SIZE];
     bool        away;
+    bool        oper;
     char        away_message[IRC_MSG_SIZE + 1];
 } client_s;
 
@@ -132,5 +133,21 @@ void client_set_away(client_s *client, const char *away_message);
  * @param client The client to set as not AWAY.
  */
 void client_unset_away(client_s *client);
+
+
+/**
+ * Sets the client as an operator of the IRC server.
+ *
+ * @param client The client to give operator privileges.
+ */
+void client_set_operator(client_s *client);
+
+
+/**
+ * Un-sets the client as an operator of the IRC server.
+ *
+ * @param client The client from which to remove operator privileges.
+ */
+void client_unset_operator(client_s *client);
 
 #endif //CIRC_CLIENT_H
