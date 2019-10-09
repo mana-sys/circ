@@ -1,9 +1,9 @@
-//
-// Created by mana on 8/12/19.
-//
+/*
+ *
+ */
 
-#ifndef CIRC_CHANNEL_H
-#define CIRC_CHANNEL_H
+#ifndef CHANNEL_H
+#define CHANNEL_H
 
 #include <glib.h>
 #include <stdbool.h>
@@ -15,11 +15,40 @@
 
 struct client_s;
 
+typedef union channel_member_mode_u {
+    struct {
+        unsigned int chanop;
+        unsigned int voice;
+    };
+    int packed;
+} channel_member_mode_u;
+
+typedef union channel_mode_u {
+    struct {
+        unsigned int moderated;
+        unsigned int topic;
+    };
+    int packed;
+} channel_mode_u;
+
+/**
+ * Represents an IRC channel.
+ */
 typedef struct channel_s {
-    char            name[CHANNEL_NAME_MAX + 1];     /* The name of the channel */
-    char            topic[CHANNEL_TOPIC_MAX + 1];   /* The topic of the channel */
-    GHashTable *    members;                        /* Members of the channel (hash from client ID to client pointer */
-    GHashTable *    member_modes;                   /* Modes of the channel members (hash from client ID to mode */
+
+    /* The name of the channel. */
+    char            name[CHANNEL_NAME_MAX + 1];
+
+    /* The topic of the channel. */
+    char            topic[CHANNEL_TOPIC_MAX + 1];
+
+    /* Members of the channel (hash from client ID to client pointer */
+    GHashTable *    members;
+
+    /* Modes of the channel members (hash from client ID to mode bitfield). */
+    GHashTable *    member_modes;
+
+    channel_mode_u  modes;
     bool            private;                        /* Whether this channel is a private channel. */
     bool            secret;                         /* Whether this channel is a secret channel. */
     bool            invite_only;                    /* Whether this channel is invite-only. */
@@ -83,6 +112,7 @@ int channel_sendall_part(channel_s *channel, struct client_s *source, const char
 
 /**
  * Verifies the validity of the given channel name.
+ *
  * @param name The name to test.
  * @return 0 if the name is valid, -1 if not.
  */

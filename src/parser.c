@@ -8,7 +8,6 @@
 
 #define NICK_MAX_SIZE 9
 
-
 #define check_need_more_params(tok, message) do {   \
     if (tok == NULL) {                              \
         message->parse_err = ERR_NEEDMOREPARAMS;    \
@@ -33,6 +32,7 @@ static int parse_message_names   (irc_message_s *message, char *saveptr);
 
 static int parse_message_away(irc_message_s *, char *);
 static int parse_message_oper(irc_message_s *, char *);
+static int parse_mode(irc_message_s *, char *);
 
 
 int parse_message(char *buf, struct irc_message *message)
@@ -73,6 +73,8 @@ int parse_message(char *buf, struct irc_message *message)
             return parse_message_away(message, saveptr);
         } else if (strcmp(tok, "OPER") == 0) {
             return parse_message_oper(message, saveptr);
+        } else if (strcmp(tok, "MODE") == 0) {
+            return parse_mode(message, saveptr);
         } else {
             message->type = UNKNOWN;
             return 0;
@@ -426,6 +428,45 @@ static int parse_message_oper(irc_message_s *message, char *saveptr)
     check_need_more_params(tok, message);
 
     message->message.oper.password = tok;
+
+    return 0;
+}
+
+static int parse_mode(irc_message_s *message, char *saveptr)
+{
+    char *tok;
+    size_t toklen;
+
+    message->type = MODE;
+
+    /*
+     * Parse the first parameter. The first parameter may either be <user> or <channel>; we differentiate by checking
+     * the first character.
+     */
+    tok = msgtok_r(NULL, &toklen, &saveptr);
+    check_need_more_params(tok, message);
+
+    switch (tok[0]) {
+        case '#':
+        case '+':
+        case '!':
+        case '&':
+            fprintf(stderr, "channel mode message with %s\n", tok);
+            message->message.mode.type = MODE_CHANNEL;
+            break;
+        default:
+            fprintf(stderr, "user mode message with %s\n", tok);
+
+            message->message.mode.type = MODE_USER;
+    }
+
+    message->message.mode.target = tok;
+
+    /*
+     * Store the rest of the (optional) parameters. It's fine if there are no more tokens, in which
+     * case we simply store the NULL.
+     */
+    message->message.mode.saveptr = saveptr;
 
     return 0;
 }

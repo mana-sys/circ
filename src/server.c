@@ -11,20 +11,10 @@
 #include "server.h"
 #include "socket.h"
 
-
 /*
  * Default global server struct.
  */
 server_s g_server;
-
-/*
- * Used to assign IDs to clients. This variable starts at 1 because
- * the hash table holding clients to nicknames cannot distinguish
- * between a key that does not exist and a key whose corresponding
- * value is 0.
- */
-//static int id = 1;
-
 
 static void string_key_destroy_func(gpointer data);
 
@@ -90,15 +80,7 @@ void start_server(const struct config_s conf[static 1])
 }
 
 
-int server_generate_id(server_s *server)
-{
-    int id;
-
-    id = server->idCounter;
-    server->idCounter = id + 1;
-
-    return id;
-}
+int server_generate_id(server_s *server);
 
 
 channel_s * server_get_channel(server_s *server, char *name)
@@ -107,6 +89,7 @@ channel_s * server_get_channel(server_s *server, char *name)
 
     /*
      * Convert supplied name to lowercase.
+     * TODO: Move this out to the caller.
      */
     for (c = name; *c; c++)
     {
@@ -143,12 +126,8 @@ channel_s * server_create_channel(server_s *server, char *name, struct client_s 
     return channel;
 }
 
-
-void server_remove_channel(server_s *server, channel_s *channel)
-{
-    g_hash_table_remove(server->channels, channel->name);
-    free(channel);
-}
+/* NOLINTNEXTLINE */
+void server_remove_channel(server_s *server, channel_s *channel);
 
 static void string_key_destroy_func(gpointer data)
 {

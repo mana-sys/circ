@@ -1,3 +1,9 @@
+/**
+ * @file server.h
+ * @brief Test file
+ * Methods to interact with the circd server.
+ */
+
 #ifndef SERVER_H
 #define SERVER_H
 
@@ -35,10 +41,6 @@ typedef struct server_s {
  */
 void start_server(const struct config_s conf[static 1]);
 
-
-int server_generate_id(server_s *server);
-
-
 /**
  * Gets the channel with the specified name.
  *
@@ -47,7 +49,6 @@ int server_generate_id(server_s *server);
  * @return Pointer to the corresponding channel struct, on success. NULL if the channel does not exist.
  */
 channel_s * server_get_channel(server_s *server, char *name);
-
 
 /**
  * Creates a channel with the specified name and with the specified client as its operator.
@@ -59,6 +60,32 @@ channel_s * server_get_channel(server_s *server, char *name);
  */
 channel_s * server_create_channel(server_s *server, char *name, struct client_s *operator);
 
-void server_remove_channel(server_s *server, channel_s *channel);
+/**
+ * Removes the given channel from the server and frees it.
+ *
+ * @param server
+ * @param channel
+ */
+inline void server_remove_channel(server_s *server, channel_s *channel)
+{
+    g_hash_table_remove(server->channels, channel->name);
+    free(channel);
+}
+
+/**
+ * Generates a unique client ID.
+ *
+ * @param server The server that will generate the ID.
+ * @return The unique client ID.
+ */
+inline int server_generate_id(server_s *server)
+{
+    int id;
+
+    id = server->idCounter;
+    server->idCounter = id + 1;
+
+    return id;
+}
 
 #endif

@@ -305,3 +305,19 @@ int format_msg_mode_oper(client_s *client, server_s *server, char *response)
     return snprintf(response, IRC_MSG_SIZE + 1, FMT_MSG_MODE_OPER, server->hostname, client->nickname);
 
 }
+
+int format_err_usersdontmatch(client_s *client, server_s *server, char *response)
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_ERR_USERSDONTMATCH, server->hostname, client->nickname);
+}
+
+int format_rpl_umodeis(client_s *client, server_s *server, const char *umode, char *response)
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_RPL_UMODEIS, server->hostname, client->nickname, umode);
+}
+
+int format_msg_mode(client_s *client, server_s *server, const char *target, const char *umode, char *response)
+{
+    return snprintf(response, IRC_MSG_SIZE + 1, FMT_MSG_MODE, client->nickname, client->username, client->hostname,
+                    target, umode);
+}

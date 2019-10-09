@@ -123,7 +123,11 @@ int client_join_channel(client_s *client, server_s *server, char *name);
  * @param client The client to set as AWAY
  * @param away_message The message to send as the automatic reply string for any incoming messages.
  */
-void client_set_away(client_s *client, const char *away_message);
+inline void client_set_away(client_s *client, const char *away_message)
+{
+    client->away = true;
+    strncpy(client->away_message, away_message, IRC_MSG_SIZE);
+}
 
 
 /**
@@ -132,7 +136,10 @@ void client_set_away(client_s *client, const char *away_message);
  *
  * @param client The client to set as not AWAY.
  */
-void client_unset_away(client_s *client);
+inline void client_unset_away(client_s *client)
+{
+    client->away = false;
+}
 
 
 /**
@@ -140,7 +147,10 @@ void client_unset_away(client_s *client);
  *
  * @param client The client to give operator privileges.
  */
-void client_set_operator(client_s *client);
+inline void client_set_operator(client_s *client)
+{
+    client->oper = true;
+}
 
 
 /**
@@ -148,6 +158,9 @@ void client_set_operator(client_s *client);
  *
  * @param client The client from which to remove operator privileges.
  */
-void client_unset_operator(client_s *client);
+inline void client_unset_operator(client_s *client)
+{
+    client->oper = false;
+}
 
 #endif //CIRC_CLIENT_H

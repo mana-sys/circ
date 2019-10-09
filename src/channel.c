@@ -11,6 +11,7 @@
 channel_s *channel_new(const char *name, client_s *operator)
 {
     channel_s *channel;
+    channel_member_mode_u mode;
 
     channel = calloc(1, sizeof(channel_s));
     strncpy(channel->name, name, CHANNEL_NAME_MAX);
@@ -22,10 +23,14 @@ channel_s *channel_new(const char *name, client_s *operator)
     channel->member_modes = g_hash_table_new(g_direct_hash, g_direct_equal);
 
     /*
-     * First member is the channel operator.
+     * First member is the channel operator, so we set it member mode to include the operator mode.
      */
     g_hash_table_insert(channel->members, GINT_TO_POINTER(operator->clientId), operator);
 
+    mode.packed = 0;
+    mode.chanop = 1;
+
+    g_hash_table_insert(channel->member_modes, GINT_TO_POINTER(operator->clientId), GINT_TO_POINTER(mode.packed));
 
     return channel;
 }
@@ -71,10 +76,24 @@ int channel_verify_name(const char *name)
 
 int channel_join(channel_s *channel, struct client_s *client)
 {
+    channel_member_mode_u mode;
+
     if (g_hash_table_lookup(channel->members, GINT_TO_POINTER(client->clientId))) {
         circlog(L_DEBUG, "Client ID =%d is already part of channel %s", client->clientId, channel->name);
     } else {
+
+        /*
+         * Insert the new client, also allocating new space for its member modes.
+         */
+        mode.packed = 0;
+
         g_hash_table_insert(channel->members, GINT_TO_POINTER(client->clientId), client);
+        g_hash_table_insert(channel->member_modes, GINT_TO_POINTER(client->clientId), GINT_TO_POINTER(mode.packed));
+
+        /*
+         * Notify all other channel members.
+         * TODO: This probably shouldn't be in this method to keep separation of concerns. Maybe move this out?
+         */
         channel_sendall_join(channel, client);
     }
 

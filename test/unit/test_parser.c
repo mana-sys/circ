@@ -374,7 +374,33 @@ static void TestParser_AwayNoMessage()
     TEST_ASSERT_EQUAL_PTR(NULL, parsed.message.away.text);
 }
 
+static void test_mode_user()
+{
+    char message[] = "MODE nick -o\r\n";
 
+    parse_message(message, &parsed);
+
+    expect_message_type(MODE);
+    expect_message_parse_error_none();
+
+    TEST_ASSERT_EQUAL_INT(MODE_USER, parsed.message.mode.type);
+    TEST_ASSERT_EQUAL_STRING("nick", parsed.message.mode.target);
+    TEST_ASSERT_EQUAL_STRING("-o\r\n", parsed.message.mode.saveptr);
+}
+
+static void test_mode_channel()
+{
+    char message[] = "MODE #channel +v nick\r\n";
+
+    parse_message(message, &parsed);
+
+    expect_message_type(MODE);
+    expect_message_parse_error_none();
+
+    TEST_ASSERT_EQUAL_INT(MODE_CHANNEL, parsed.message.mode.type);
+    TEST_ASSERT_EQUAL_STRING("#channel", parsed.message.mode.target);
+    TEST_ASSERT_EQUAL_STRING("+v nick\r\n", parsed.message.mode.saveptr);
+}
 
 int main() {
     UnityBegin("test_parser.c");
@@ -442,6 +468,12 @@ int main() {
      */
     RUN_TEST(TestParser_AwayMessage);
     RUN_TEST(TestParser_AwayNoMessage);
+
+    /*
+     * MODE tests.
+     */
+    RUN_TEST(test_mode_user);
+    RUN_TEST(test_mode_channel);
 
     return UnityEnd();
 }

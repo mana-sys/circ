@@ -90,6 +90,29 @@
 
 #define FMT_MSG_MODE_OPER ":%s MODE %s +o\r\n"
 
+/*
+ * MODE replies.
+ */
+
+/*
+ * Format: ":Unknown MODE flag"
+ */
+#define FMT_ERR_UMODEUNKNOWNFLAG ":%s 501 %s :Unknown MODE flag\r\n"
+
+/*
+ * Format: ":Cannot change mode for other users"
+ */
+#define FMT_ERR_USERSDONTMATCH ":%s 502 %s :Cannot change mode for other users\r\n"
+
+/*
+ * Format: "<user mode string>"
+ */
+#define FMT_RPL_UMODEIS ":%s 221 %s %s\r\n"
+
+/*
+ * Format:
+ */
+#define FMT_MSG_MODE "%s!%s@%s MODE %s :%s\r\n"
 
 
 /*
@@ -198,6 +221,11 @@ int format_rpl_nowaway(client_s *client, server_s *server, char *response);
 int format_rpl_youreoper(client_s *client, server_s *server, char *response);
 int format_err_passwdmismatch(client_s *client, server_s *server, char *response);
 int format_msg_mode_oper(client_s *client, server_s *server, char *response);
+
+
+int format_err_usersdontmatch(client_s *client, server_s *server, char *response);
+int format_rpl_umodeis(client_s *client, server_s *server, const char *umode, char *response);
+int format_msg_mode(client_s *client, server_s *server, const char *target, const char *umode, char *response);
 
 
 #endif

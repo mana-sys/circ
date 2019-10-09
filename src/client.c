@@ -253,7 +253,9 @@ int Client_TryEmptyBuffer(client_s *client)
     return 0;
 }
 
-
+/*
+ * TODO: This should probably be a method on the server.
+ */
 int client_join_channel(client_s *client, server_s *server, char *name)
 {
 
@@ -300,23 +302,14 @@ int client_join_channel(client_s *client, server_s *server, char *name)
     return 0;
 }
 
-void client_set_away(client_s *client, const char *away_message)
-{
-    client->away = true;
-    strncpy(client->away_message, away_message, IRC_MSG_SIZE);
-}
+/* NOLINTNEXTLINE */
+void client_set_away(client_s *client, const char *away_message);
 
-void client_unset_away(client_s *client)
-{
-    client->away = false;
-}
+/* NOLINTNEXTLINE */
+void client_unset_away(client_s *client);
 
-void client_set_operator(client_s *client)
-{
-    client->oper = true;
-}
+/* NOLINTNEXTLINE */
+void client_set_operator(client_s *client);
 
-void client_unset_operator(client_s *client)
-{
-    client->oper = false;
-}
+/* NOLINTNEXTLINE */
+void client_unset_operator(client_s *client);

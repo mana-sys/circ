@@ -9,6 +9,7 @@
 #include "handlers.h"
 #include "log.h"
 #include "irc.h"
+#include "msgtok.h"
 #include "replies.h"
 
 #define MOTD_FRAGMENT_MAX 80
@@ -39,8 +40,7 @@ static int handler_topic   (client_s *, server_s *, irc_message_s *, GQueue *);
 static int handler_names   (client_s *, server_s *, irc_message_s *, GQueue *);
 static int handler_away    (client_s *, server_s *, irc_message_s *, GQueue *);
 static int handler_oper    (client_s *, server_s *, irc_message_s *, GQueue *);
-
-
+static int handler_mode    (client_s *, server_s *, irc_message_s *, GQueue *);
 
 __attribute__((constructor))
 static void Handler_Register()
@@ -61,6 +61,7 @@ static void Handler_Register()
     handlers2[NAMES]   = handler_names;
     handlers2[AWAY]    = handler_away;
     handlers2[OPER]    = handler_oper;
+    handlers2[MODE]    = handler_mode;
 }
 
 int Handler_HandleMessage (client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
@@ -528,7 +529,6 @@ static int handler_list(client_s *client, server_s *server, irc_message_s *messa
 
             channel_name = strtok_r(NULL, ",", &saveptr);
         }
-
     }
 
     push_reply(responses, Reply_RplListEnd, client, server);
@@ -614,7 +614,6 @@ static int handler_names(client_s *client, server_s *server, irc_message_s *mess
     return 0;
 }
 
-
 static int handler_away(client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
 {
 
@@ -682,6 +681,128 @@ static int handler_oper(client_s *client, server_s *server, irc_message_s *messa
             Client_Send(notified, forward);
         }
     }
+
+    return 0;
+}
+
+static int handler_user_mode(client_s *client, server_s *server, irc_message_s *message, GQueue *responses);
+static int handler_channel_mode(client_s *client, server_s *server, irc_message_s *message, GQueue *responses);
+
+static int handler_mode(client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
+{
+    /*
+     * Check for ERR_NEEDMOREPARAMS.
+     */
+    if (message->parse_err == ERR_NEEDMOREPARAMS) {
+        push_reply(responses, Reply_ErrNeedMoreParams, client, "MODE");
+        return -1;
+    }
+
+    /*
+     * If the message is a user mode message, handle it as one.
+     */
+    if (message->message.mode.type == MODE_USER) {
+        fprintf(stderr, "user mode message\n");
+
+        return handler_user_mode(client, server, message, responses);
+    } else {
+        fprintf(stderr, "channel mode message\n");
+
+        return handler_channel_mode(client, server, message, responses);
+    }
+}
+
+static int handler_user_mode(client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
+{
+    bool expecting_param = false, first_flag = true;
+    char *modestr, *saveptr, *p;
+    size_t toklen, next_index;
+    char umode[9];
+
+
+    /*
+     * If the nick specified in the user mode message is not the same as the client's nick,
+     * send ERR_USERSDONTMATCH.
+     */
+    if (strcmp(client->nickname, message->message.mode.target) != 0) {
+        push_reply(responses, format_err_usersdontmatch, client, server);
+        return -1;
+    }
+
+    saveptr = message->message.mode.saveptr;
+
+    /*
+     * If there are no more parameters, then this user mode message is a query message. Send RPL_UMODEIS.
+     */
+    if (!saveptr) {
+
+        *(p = umode) = '+';
+
+        if (client->oper) {
+            *++p = 'o';
+        }
+
+        if (client->away) {
+            *++p = 'a';
+        }
+
+        *++p = '\0';
+
+        push_reply(responses, format_rpl_umodeis, client, server, umode);
+        return 0;
+    }
+
+    while ((modestr = msgtok_r(NULL, &toklen, &saveptr)) != NULL) {
+
+        /*
+         * Handle adding user modes.
+         */
+        if (*modestr == '+') {
+
+            for (; *modestr; ++modestr) {
+
+                /*
+                 * We don't do anything for the 'o' and 'a' flags.
+                 * TODO: The rest of the user mode flags.
+                 */
+                switch (*modestr) {
+
+                }
+            }
+
+        } else if (*modestr == '-') {
+
+            for (; *modestr; ++modestr) {
+
+                /*
+                 * We don't do anything for the 'a' flag.
+                 * TODO: The rest of the user mode flags.
+                 */
+                switch (*modestr) {
+                    case 'o':
+                        client_unset_operator(client);
+
+                        /*
+                         * Notify client.
+                         */
+                        response_s *response = calloc(1, sizeof(response_s));
+                        response->len = format_msg_mode(client, server, client->nickname, "-o", response->response);
+
+                        Client_Send(client, response);
+
+                        break;
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+static int handler_channel_mode(client_s *client, server_s *server, irc_message_s *message, GQueue *responses)
+{
+
+
 
     return 0;
 }

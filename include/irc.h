@@ -20,7 +20,8 @@ enum irc_message_type {
     LIST,
     NAMES,
     AWAY,
-    OPER
+    OPER,
+    MODE
 };
 
 struct irc_message_nick {
@@ -81,6 +82,15 @@ struct irc_oper {
     char *password;
 };
 
+struct irc_mode {
+    enum {
+        MODE_USER,
+        MODE_CHANNEL,
+    } type;
+    char *target;       /* Represents the <user> and <channel> parameters. */
+    char *saveptr;      /* We use this pointer to continue parsing the parameters in the handler. */
+};
+
 typedef struct irc_message {
     enum irc_message_type           type;
     char *                          command;
@@ -98,6 +108,7 @@ typedef struct irc_message {
         struct irc_names            names;
         struct irc_away away;
         struct irc_oper oper;
+        struct irc_mode mode;
     }                               message;
 } irc_message_s;
 
